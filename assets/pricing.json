@@ -1,0 +1,19 @@
+{
+  "version": "2026-06-11",
+  "models": {
+    "claude-sonnet-4-5": {
+      "aliases": ["claude-sonnet-4-5-20250929", "sonnet-4-5", "claude-3-5-sonnet"],
+      "inputPerMillion": 3,
+      "outputPerMillion": 15,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "claude-opus-4-1": {
+      "aliases": ["opus-4-1"],
+      "inputPerMillion": 15,
+      "outputPerMillion": 75,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    }
+  }
+}
