@@ -27,6 +27,7 @@ updated: YYYY-MM-DD
 - [ ] `pnpm test` 全绿
 - [ ] `pnpm biome check .` 无新增告警
 - [ ] `pnpm tsc --noEmit` 无类型错误
-- [ ] 关键函数已加 `@spec SPEC-AG-XXX, FR-Y.Z` 注解
-- [ ] `docs/INDEX.md` 已更新 SPEC 状态
+- [ ] 关键函数已加 `@spec SPEC-AG-XXX, R<N>` 注解
+- [ ] 如涉及 render 改动，黄金快照已审查并更新（`tests/__snapshots__/`）
+- [ ] `docs/INDEX.md` 已更新 SPEC 状态与 FR ↔ SPEC ↔ 文件映射
 - [ ] 如涉及 CLI 接口变化，PRD §5 已同步更新

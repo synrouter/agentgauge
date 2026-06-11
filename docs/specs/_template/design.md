@@ -15,13 +15,15 @@ updated: YYYY-MM-DD
 
 ## 设计决策
 
-### D-AG-X.1: <决策标题>
+> 编号规则：设计决策用 `D1`、`D2`…（SPEC 内自增；与 PRD 检测器编号 D0-D10 无关，跨文档引用写 `SPEC-AG-XXX 设计决策 D<N>`）。
+
+### D1: <决策标题>
 
 **理由**: <为什么做出此选择>
 **考虑的替代方案**: <评估了哪些其他方案>
 **取舍**: <选择的代价>
 
-### D-AG-X.2: <决策标题>
+### D2: <决策标题>
 
 ...
 
@@ -44,6 +46,12 @@ updated: YYYY-MM-DD
 
 - `tests/path/to/file1.test.ts`
 - 黄金报告快照（如涉及 render 改动）: `tests/__snapshots__/...`
+
+## 现有实现参考（如适用）
+
+<!-- 若 synrouter / ccusage / agentsview / RTK 已解决过本 SPEC 的同类问题，列"本 SPEC 需求 → 参考位置 → 参考什么"映射表。
+     规则：读懂算法 → TypeScript 重写 → PR 注明出处；不逐行翻译、不复制内部命名。
+     主题级总表见仓库根 CLAUDE.md "算法参考来源"。无可参考实现时删除本节。 -->
 
 ## 与 synrouter 的边界
 

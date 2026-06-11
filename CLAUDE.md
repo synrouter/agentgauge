@@ -127,6 +127,7 @@ agentgauge/
 │   │   ├── pricing.ts          # 模型定价 + 远程更新（zod 校验）
 │   │   └── cost.ts             # cost / savings 计算器
 │   ├── detectors/
+│   │   ├── d0-noise.ts
 │   │   ├── d1-tool-bloat.ts
 │   │   ├── d2-cache-break.ts
 │   │   ├── d3-dup-results.ts
@@ -186,11 +187,23 @@ agentgauge/
 | 双格式 tool_use_id → (name, input) 索引 | `transform/tool_compress/tool_index.py` | `src/parsers/types.ts` 内联 |
 | 三层 Agent identify | `transform/session_fingerprint.py` | `src/identify/profiles.ts` |
 | Agent quirk 注释（16 Agent 全量） | `transform/tool_compress/agent_registry.py` | `src/identify/profiles.ts` 注释段 |
-| L0 五阶段噪声估算 | `transform/tool_compress/l0_noise.py` | `src/detectors/d3-dup-results.ts` 等 |
+| L0 五阶段噪声估算 | `transform/tool_compress/l0_noise.py` | `src/detectors/d0-noise.ts` |
 | cache_control 注入逻辑（仅参考，不实现） | `transform/cache_inject.py`（SPEC-002） | 不实现，标 ⚡ 指向 synrouter |
 | tool_result 截断阈值（仅参考） | `transform/tool_trim.py`（SPEC-003） | `d4-oversize.ts` 用其阈值常量 |
 
 **规则**：读懂 → 提炼算法 → TypeScript 重写 → 在 PR 描述里注明"算法参考自 synrouter 的 X 模块"。**不复制任何 synrouter 内部命名**（`sk-sr-*` / `x-synrouter-*` / `synrouter_gateway.*`），用中性命名。
+
+### 开源竞品参考（ccusage / agentsview，均 MIT，已拉到本地）
+
+> `~/Documents/AI/github/ccusage`（Rust 核心）/ `~/Documents/AI/github/agentsview`（Go）。语言不同无法直接复用，规则同上：读懂 → TS 重写 → PR 注明出处。**逐需求的精确参考映射维护在各 SPEC 的 design.md "现有实现参考"一节**，此处只列主题：
+
+| 算法主题 | 参考位置 | agentgauge 落点 |
+|----------|----------|-----------------|
+| JSONL 去重（messageId+requestId / sidechain replay / chunk 合并） | ccusage `adapter/claude/mod.rs` + agentsview `parser/claude.go` | SPEC-AG-001, R4（缺此会系统性双重计数） |
+| 多目录发现 + 容错 + null 字段防御 | ccusage `adapter/claude/paths.rs` / `mod.rs` | SPEC-AG-001, R1/R2 |
+| cache 计费细节（5m/1h ephemeral、200k tier）+ costUSD 三态 + 模型 ID 归一化 | ccusage `cost.rs` / `pricing.rs` | SPEC-AG-002, R4 |
+| 系统注入消息分类 / compact 边界 / usage probe 过滤（误报防御） | agentsview `parser/claude.go` | SPEC-AG-001, R3 打标 → SPEC-AG-003 消费 |
+| 多 agent 归一化模型 + registry（25 agent 路径清单） | agentsview `parser/types.go` | SPEC-AG-001, R3 / SPEC-AG-006, R2；v0.2 Codex parser 的主参考是 `parser/codex.go` |
 
 ---
 
@@ -199,7 +212,7 @@ agentgauge/
 agentgauge 的 L0 噪声估算思路源自 [RTK (rtk-ai/rtk, MIT)](https://github.com/rtk-ai/rtk)。三处致谢缺一不可：
 
 1. **README 顶部** `Credits & Prior Art` 段落（RTK + MIT + 链接 + 一句"they pioneered this at the CLI layer; we measure it at the session-log layer"）。
-2. **`src/detectors/d3-dup-results.ts` / 噪声相关模块文件头注释** 保留 "noise detection adapted from RTK"。
+2. **`src/detectors/d0-noise.ts` / 噪声相关模块文件头注释** 保留 "noise detection adapted from RTK"。
 3. **HN / Reddit launch 帖子正文** 主动提 RTK。
 
 ---
