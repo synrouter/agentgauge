@@ -163,7 +163,7 @@ agentgauge/
 ## 工作约定
 
 - **包管理**：pnpm（开发）；用户端用 `npx agentgauge` 或 `npm i -g agentgauge`。
-- **文档位置**：仓内 `docs/agentgauge-prd.md` 是单一权威 PRD；策略性 / 增长向 / HN 帖子草稿留在 obsidian 不进本仓。
+- **文档位置**：仓内 `docs/product/agentgauge-prd.md` 是单一权威 PRD；`docs/INDEX.md` + `docs/AGENTS.md` 定义轻量 Spec-Driven 流程；策略性 / 增长向 / HN 帖子草稿留在 obsidian 不进本仓。
 - **commit 格式**：`<type>: <description>`（feat / fix / refactor / docs / test / chore / perf / ci）。不加 AI 协作署名。
 - **macOS AppleDouble**：`._*` 文件不要 commit；`.gitignore` 已包含。
 - **任何提交前必跑**：

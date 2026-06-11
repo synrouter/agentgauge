@@ -21,7 +21,7 @@ tags: [open-source, growth, cli, synrouter-funnel]
 
 | | |
 |---|---|
-| **本文档定位** | agentgauge 这个开源工具的产品战略 PRD（与 `synrouter-prd.md` 平级） |
+| **本文档定位** | agentgauge 这个开源工具的产品战略 PRD + CLI 接口契约（独立公开 repo 的唯一权威产品文档） |
 | **关系** | agentgauge 是 **独立公开 repo**（MIT 许可），synrouter monorepo 闭源；二者通过转化漏斗连接 |
 | **不在本文范围** | synrouter 网关本身的功能（见 SPEC-001 ~ SPEC-020）、agentgauge 的源代码细节（在独立 repo 内） |
 | **将来产物** | 在 agentgauge 独立 repo 中拆分为若干 SPEC（首版 SPEC-AG-001 ~ SPEC-AG-005） |
