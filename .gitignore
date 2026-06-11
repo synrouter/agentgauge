@@ -8,13 +8,16 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+node_modules/
 build/
+dist/
 develop-eggs/
 dist/
 downloads/
 eggs/
 .eggs/
 lib/
+!src/lib/
 lib64/
 parts/
 sdist/
@@ -38,6 +41,7 @@ pip-delete-this-directory.txt
 
 # Unit test / coverage reports
 htmlcov/
+coverage/
 .tox/
 .nox/
 .coverage

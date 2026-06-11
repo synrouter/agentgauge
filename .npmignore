@@ -1,0 +1,8 @@
+src
+tests
+scripts
+docs
+examples
+*.config.ts
+tsconfig.json
+biome.json

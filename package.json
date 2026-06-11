@@ -1,9 +1,19 @@
 {
   "name": "agentgauge",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Open-source CLI that breaks down where your AI coding agent burns tokens — per-section, per-tool, with cost & compressible-noise estimates. Reads local Claude Code / Codex session logs, runs fully offline.",
+  "type": "module",
   "bin": {
     "agentgauge": "./cli.js"
+  },
+  "files": ["dist", "assets", "cli.js", "README.md", "LICENSE"],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run --coverage",
+    "test:unit": "vitest run",
+    "check:no-network": "tsx scripts/check-no-network.ts",
+    "prepack": "pnpm build",
+    "typecheck": "tsc --noEmit"
   },
   "engines": {
     "node": ">=18"
@@ -21,5 +31,24 @@
   ],
   "license": "MIT",
   "repository": "github:synrouter/agentgauge",
-  "homepage": "https://github.com/synrouter/agentgauge"
+  "homepage": "https://github.com/synrouter/agentgauge",
+  "dependencies": {
+    "@anthropic-ai/tokenizer": "^0.0.4",
+    "citty": "^0.1.6",
+    "debug": "^4.3.7",
+    "fast-glob": "^3.3.2",
+    "js-tiktoken": "^1.0.15",
+    "picocolors": "^1.1.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/debug": "^4.1.12",
+    "@types/node": "^22.10.2",
+    "@vitest/coverage-v8": "^2.1.8",
+    "tsx": "^4.19.2",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
 }

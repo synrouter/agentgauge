@@ -1,0 +1,4 @@
+{"type":"user","uuid":"u1","sessionId":"s-broken","timestamp":"2026-06-10T13:00:00.000Z","cwd":"/Users/example/project-broken","message":{"role":"user","content":"/usage"}}
+not json at all
+{"type":"assistant","uuid":"a1","sessionId":"s-broken","timestamp":"2026-06-10T13:00:01.000Z","message":{"id":"msg-broken","role":"assistant","model":"<synthetic>","content":[{"type":"text","text":"usage"}],"usage":{"input_tokens":0,"output_tokens":0}}}
+{"type":"assistant"
