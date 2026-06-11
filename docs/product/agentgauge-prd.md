@@ -492,8 +492,7 @@ agentgauge analyze [options]
 
 | 选项 | 简写 | 说明 | 示例 |
 |------|------|------|------|
-| `--last` | — | 最近一次 session（默认） | `agentgauge analyze --last` |
-| `--last-Nd` / `--last-Nh` | — | 最近 N 天 / 小时 | `--last-7d` `--last-24h` |
+| `--last [duration]` | — | 最近一次 session（无值，默认）或最近 N 天 / 小时 | `--last` `--last 7d` `--last 24h` |
 | `--since <date>` | — | 起始时间（ISO 8601 / `YYYY-MM-DD`） | `--since 2026-06-01` |
 | `--until <date>` | — | 结束时间 | `--until 2026-06-07` |
 | `--all` | — | 所有可发现的 session | `--all` |
@@ -541,19 +540,19 @@ npx agentgauge
 agentgauge analyze --last
 
 # 最近一周的汇总报告，输出 HTML 给老板看
-agentgauge analyze --last-7d --html report.html
+agentgauge analyze --last 7d --html report.html
 
 # 特定项目，输出 JSON 进 CI
-agentgauge analyze --project my-app --last-24h --json > usage.json
+agentgauge analyze --project my-app --last 24h --json > usage.json
 
 # 调试某个具体 session
 agentgauge analyze --session 9f3a1b2c... --verbose
 
 # 截图传播（极简输出）
-agentgauge analyze --last-7d --quiet
+agentgauge analyze --last 7d --quiet
 
 # 只看高价值 finding
-agentgauge analyze --last-7d --min-severity high --min-savings 1.0
+agentgauge analyze --last 7d --min-severity high --min-savings 1.0
 ```
 
 ### 5.5 `sessions` —— 列出可用 session
