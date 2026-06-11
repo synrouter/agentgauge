@@ -1,0 +1,9 @@
+{
+  "name": "agentgauge",
+  "version": "0.0.1",
+  "description": "Token attribution & cost analysis for AI coding agent sessions (Claude Code, Codex). Early development.",
+  "bin": { "agentgauge": "./cli.js" },
+  "keywords": ["claude-code", "token", "cost", "llm", "cli"],
+  "license": "MIT",
+  "repository": "github:yourname/agentgauge"
+}
