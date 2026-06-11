@@ -127,6 +127,7 @@ agentgauge/
 │   │   ├── pricing.ts          # 模型定价 + 远程更新（zod 校验）
 │   │   └── cost.ts             # cost / savings 计算器
 │   ├── detectors/
+│   │   ├── d0-noise.ts
 │   │   ├── d1-tool-bloat.ts
 │   │   ├── d2-cache-break.ts
 │   │   ├── d3-dup-results.ts
@@ -186,11 +187,23 @@ agentgauge/
 | 双格式 tool_use_id → (name, input) 索引 | `transform/tool_compress/tool_index.py` | `src/parsers/types.ts` 内联 |
 | 三层 Agent identify | `transform/session_fingerprint.py` | `src/identify/profiles.ts` |
 | Agent quirk 注释（16 Agent 全量） | `transform/tool_compress/agent_registry.py` | `src/identify/profiles.ts` 注释段 |
-| L0 五阶段噪声估算 | `transform/tool_compress/l0_noise.py` | `src/detectors/d3-dup-results.ts` 等 |
+| L0 五阶段噪声估算 | `transform/tool_compress/l0_noise.py` | `src/detectors/d0-noise.ts` |
 | cache_control 注入逻辑（仅参考，不实现） | `transform/cache_inject.py`（SPEC-002） | 不实现，标 ⚡ 指向 synrouter |
 | tool_result 截断阈值（仅参考） | `transform/tool_trim.py`（SPEC-003） | `d4-oversize.ts` 用其阈值常量 |
 
 **规则**：读懂 → 提炼算法 → TypeScript 重写 → 在 PR 描述里注明"算法参考自 synrouter 的 X 模块"。**不复制任何 synrouter 内部命名**（`sk-sr-*` / `x-synrouter-*` / `synrouter_gateway.*`），用中性命名。
+
+### 开源竞品参考（ccusage / agentsview，均 MIT，已拉到本地）
+
+> `~/Documents/AI/github/ccusage`（Rust 核心）/ `~/Documents/AI/github/agentsview`（Go）。语言不同无法直接复用，规则同上：读懂 → TS 重写 → PR 注明出处。**逐需求的精确参考映射维护在各 SPEC 的 design.md "现有实现参考"一节**，此处只列主题：
+
+| 算法主题 | 参考位置 | agentgauge 落点 |
+|----------|----------|-----------------|
+| JSONL 去重（messageId+requestId / sidechain replay / chunk 合并） | ccusage `adapter/claude/mod.rs` + agentsview `parser/claude.go` | SPEC-AG-001, R4（缺此会系统性双重计数） |
+| 多目录发现 + 容错 + null 字段防御 | ccusage `adapter/claude/paths.rs` / `mod.rs` | SPEC-AG-001, R1/R2 |
+| cache 计费细节（5m/1h ephemeral、200k tier）+ costUSD 三态 + 模型 ID 归一化 | ccusage `cost.rs` / `pricing.rs` | SPEC-AG-002, R4 |
+| 系统注入消息分类 / compact 边界 / usage probe 过滤（误报防御） | agentsview `parser/claude.go` | SPEC-AG-001, R3 打标 → SPEC-AG-003 消费 |
+| 多 agent 归一化模型 + registry（25 agent 路径清单） | agentsview `parser/types.go` | SPEC-AG-001, R3 / SPEC-AG-006, R2；v0.2 Codex parser 的主参考是 `parser/codex.go` |
 
 ---
 
@@ -199,7 +212,7 @@ agentgauge/
 agentgauge 的 L0 噪声估算思路源自 [RTK (rtk-ai/rtk, MIT)](https://github.com/rtk-ai/rtk)。三处致谢缺一不可：
 
 1. **README 顶部** `Credits & Prior Art` 段落（RTK + MIT + 链接 + 一句"they pioneered this at the CLI layer; we measure it at the session-log layer"）。
-2. **`src/detectors/d3-dup-results.ts` / 噪声相关模块文件头注释** 保留 "noise detection adapted from RTK"。
+2. **`src/detectors/d0-noise.ts` / 噪声相关模块文件头注释** 保留 "noise detection adapted from RTK"。
 3. **HN / Reddit launch 帖子正文** 主动提 RTK。
 
 ---
@@ -210,6 +223,66 @@ agentgauge 的 L0 噪声估算思路源自 [RTK (rtk-ai/rtk, MIT)](https://githu
 - **关键纯函数**测试用真实 fixture（`examples/` 脱敏样例）而不是 mock。
 - **黄金报告测试**：`render/terminal.ts` 和 `render/html.ts` 用 snapshot 测试锁住输出格式，防止偷偷改坏 UX。
 - **CI 必跑**：`pnpm test` + `pnpm biome check` + `pnpm tsc --noEmit`，三个绿才能 merge。
+
+---
+
+## v0.1 实施指令（自主执行 / goal 模式用）
+
+> 本节面向自主完成 v0.1 全量开发的 AI Agent（Codex /goal、Claude Code 长任务等）。目标的**达成标准**由调用方的 goal 文本定义；本节是过程约束——**违反红线视为目标未达成**。
+
+### 阅读顺序（写代码前读完）
+
+1. 本文件（仓库根 `AGENTS.md`）——行为准则、技术栈决议、工作约定、算法参考红线
+2. `docs/AGENTS.md` ——工作流规则、`@spec`/`@prd` 注解格式、PRD 变更同步清单
+3. `docs/INDEX.md` ——6 个 SPEC 状态表、依赖图、FR↔SPEC↔文件映射
+4. `docs/specs/SPEC-AG-001~006/` 各自的 prd.md + design.md + tasks.md ——**唯一需求权威**；产品背景查 `docs/product/agentgauge-prd.md`（重点 §5 CLI 契约、FR-AG-2 残差归因、FR-AG-4 检测器表）
+
+文档间冲突：SPEC 之间矛盾以 PRD 为准并停下报告；本节与 SPEC 矛盾以 SPEC 为准。
+
+### 实施顺序（严格按依赖图，每个 SPEC 三个质量门全绿后再进下一个）
+
+```
+0. 脚手架：pnpm + tsup + biome + vitest + citty；tsconfig strict + noUncheckedIndexedAccess；
+   ESM 主、tsup 双发 CJS；engines.node >= 18
+1. SPEC-AG-001 claude-code-parser   ← 地基，含 examples/ fixture 制作
+2. SPEC-AG-006 agent-identify       ← 小，且 003 的 D1 依赖它
+3. SPEC-AG-002 token-attribution
+4. SPEC-AG-003 detectors-d0-d5
+5. SPEC-AG-004 report-rendering
+6. SPEC-AG-005 cli-interface        ← 编排收口
+```
+
+### 每个 SPEC 的工作循环
+
+1. 读三件套；design.md "现有实现参考"表指向本地竞品仓库——读懂算法后 **TypeScript 重写**，禁止逐行翻译，commit 注明"算法参考自 X"
+2. 测试先行：用 `examples/` 真实 fixture，不用 mock
+3. 实现；关键导出函数加 `@spec SPEC-AG-XXX, R<N>` 注解
+4. 质量门：`pnpm test` + `pnpm biome check .` + `pnpm tsc --noEmit` 全绿
+5. 勾掉 tasks.md（附日期）；SPEC 完成时 INDEX.md 状态改 `implemented` 并回填映射表文件列
+6. 每 SPEC ≥ 1 个 commit（`<type>: <description>`，无 AI 署名），body 概述实现了哪些 R
+
+### 红线（违反 = 返工）
+
+- **零网络**：除 `update-pricing` 模块外不得 import `node:http(s)`/`net`/`undici` 或调用 `fetch`。SPEC-AG-005 的 CI 静态断言**尽早建**，让它守住你自己
+- **永不 crash**：parsers / attribution / detectors 对畸形输入降级返回；损坏 JSONL 行 = 跳过 + 计数
+- **fixture 隐私**：制作 fixture 时可读本机 `~/.claude/projects/**/*.jsonl` 验证字段结构，但**落盘进仓库的 fixture 必须合成或彻底脱敏**（路径、项目名、对话内容全换占位值；usage 数字保持真实形状）。SPEC-AG-001 数据表中标"本机 fixture 待复核"的两项（重复计费记录、AgentProgress 包装），制作 fixture 时顺手验证并把结论更新回该表
+- **RTK 致谢**：`src/detectors/d0-noise.ts` 文件头必须含 `noise detection adapted from RTK (https://github.com/rtk-ai/rtk, MIT)`
+- **不复制 synrouter 内部命名**；竞品代码只读不抄
+- **usage 是 ground truth**：归因各段之和恒等于 API usage 总量（SPEC-AG-002 R1 是属性测试，不是注释）
+
+### 已知决策（已定，别重新发明）
+
+- 时间窗口 flag 是 `--last [7d|24h]`（不是 `--last-7d`）；T-AG-005.1 要求把该语法回写 PRD §5.4.1，改后按 `docs/AGENTS.md` 同步清单核对联动文件
+- tokenizer 用 js-tiktoken，只算相对比例再按 usage 缩放
+- 残差估算两段（system_prompt / tool_definitions）输出永远带 `~` / `estimated: true`
+- JSONL 去重（SPEC-AG-001 R4）是 P0
+- HTML 报告 < 80KB 单文件；JSON `schema_version: 1` 只增不删（契约测试锁定）
+
+### 卡住时
+
+- SPEC 矛盾或数据假设被实测推翻：**停下**，写清矛盾点与建议解法再继续，不静默改需求
+- 阈值 / 文案级小决策自己定，commit body 说明
+- 每完成一个 SPEC 汇报：质量门结果、勾掉的任务、下一个 SPEC
 
 ---
 
