@@ -1,17 +1,25 @@
 {
   "name": "agentgauge",
   "version": "0.0.2",
-  "description": "Token attribution & cost analysis for AI coding agent sessions (Claude Code, Codex). Early development.",
+  "description": "Open-source CLI that breaks down where your AI coding agent burns tokens — per-section, per-tool, with cost & compressible-noise estimates. Reads local Claude Code / Codex session logs, runs fully offline.",
   "bin": {
     "agentgauge": "./cli.js"
   },
+  "engines": {
+    "node": ">=18"
+  },
   "keywords": [
     "claude-code",
+    "codex",
+    "ai-agent",
     "token",
-    "cost",
+    "cost-analysis",
     "llm",
-    "cli"
+    "cli",
+    "tui",
+    "observability"
   ],
   "license": "MIT",
-  "repository": "github:synrouter/agentgauge"
+  "repository": "github:synrouter/agentgauge",
+  "homepage": "https://github.com/synrouter/agentgauge"
 }

@@ -2,7 +2,7 @@
 
 > 开源 CLI + 常驻客户端：看清你的编码 Agent 把 token 花在哪了。
 > 读取本地 Agent 日志/请求体，按轮次·工具拆解 token 去向，指纹识别 Agent，估算工具输出中可压缩的噪声。
-> 公开仓库（MIT）：`github.com/synrouter/agentgauge`。策略/规划文档留在 obsidian，不进本仓。
+> 公开仓库（MIT）：`github.com/synrouter/agentgauge`。策略/规划文档留在 obsidian 与 `docs/product/`，详见 `docs/product/agentgauge-prd.md`。
 
 ---
 
@@ -70,89 +70,150 @@
 ## 项目背景
 
 - **一句话定位**：看清你的编码 Agent 把 token 花在哪了 —— 按轮次·工具拆解 + Agent 指纹识别 + 可压缩噪声估算。
-- **产品形态**：CLI（一次性分析）+ 常驻客户端（tail 本地日志，菜单栏/TUI 近实时展示），对标 ccusage + codexbar 的使用体验，但占据它们没占的位：**token 浪费在哪个工具、有多少可压缩**。
+- **产品形态**：CLI（一次性分析）→ HTML 报告（传播载体）→ 常驻 TUI（v0.3 watch 模式）。对标 ccusage 的分发方式 + agentsview 的信息深度。
 - **核心能力三件套**：
   1. **identify** — 三层 Agent 识别（header > 工具签名 > 提示词），输出 agent + confidence。
-  2. **breakdown** — token 归因：per-section（system/tools/message/tool结果）+ per-tool 排序。
-  3. **noise** — L0 噪声估算（ANSI/进度条/重复行），衡量工具输出"可压缩"比例。
-- **隐私承诺**：纯本地、零网络、零数据库、零上传。这是相对竞品的硬差异，也是 HN 信任基础。
-- **与 Synrouter 的边界**：agentgauge 只**测量**不**改写**。在途压缩/缓存/计量归因/飞轮全部留在闭源 Synrouter。
+  2. **breakdown** — 7 类 token 归因（system/tools/tool_results/history/user_input/output/cache_read+write）+ per-tool 排序。
+  3. **noise** — L0 噪声估算（ANSI/进度条/重复行 + 其他检测器），衡量工具输出"可压缩"比例并量化美元节省。
+- **隐私承诺**：纯本地、零网络、零数据库、零上传（除内置 pricing 主动更新）。这是相对竞品的硬差异，也是 HN/Reddit 帖子的信任基础。
+- **与 Synrouter 的边界**：agentgauge 只**测量**不**改写**。在途压缩/缓存断点注入/工具裁剪/计量归因/飞轮全部留在闭源 Synrouter，作为 ⚡ 标记的自动修复路径。
 
-完整设计文档（不进本仓，留在 obsidian）：
-- `市场/Hacker News/agentgauge-产品设计文档.md`
+完整 PRD：`docs/product/agentgauge-prd.md`（含检测器 D1-D5 算法、报告格式规范、KPI、漏斗设计）。
 
 ---
 
-## 仓库结构（规划）
+## 技术栈（v0.x 已决，2026-06-11）
+
+> 决策详见 PRD §FR-AG-7。UX 视角下 **TypeScript / Node** 是唯一答案：`npx agentgauge` 一行运行 + Claude Code 用户 100% 已装 Node + Ink 是当下 TUI 体验天花板。
+
+**不复用 synrouter 的任何 Python 代码**。synrouter 的 `tool_index` / `session_fingerprint` / `agent_registry` / `l0_noise` 仅作为**算法参考**——读懂、用 TypeScript 重写。这样既避开脱敏红线，又能针对 CLI/TUI 场景做单独优化（流式解析、增量更新、纯函数化）。
+
+| 类别 | 选型 | 备注 |
+|------|------|------|
+| 语言 | TypeScript（strict） | tsconfig: `strict: true`, `noUncheckedIndexedAccess: true` |
+| Runtime | Node ≥ 18 | 用 ESM；CJS 仅 tsup 双发兼容 |
+| 包管理 | **pnpm** | 开发用；用户端用 `npx` / `npm i -g` |
+| 构建 | tsup | esbuild 内核，毫秒级；ESM/CJS 双发 |
+| CLI 框架 | **citty** | commander（API 偏 OOP，类型不够现代）/ oclif（重，启动慢） |
+| TUI（v0.3） | Ink + ink-table + ink-spinner | 不要 blessed |
+| 颜色 / 进度 | picocolors + cli-progress | 不要 chalk |
+| Tokenizer | `@anthropic-ai/tokenizer` + `js-tiktoken` | 纯 JS，免编译 binding |
+| HTML 模板 | 单文件模板字符串 + 内联 CSS | v0.1 不引入 React SSR |
+| Schema 校验 | zod | pricing.json / 外部 JSON |
+| 测试 | vitest | 兼容 jest API |
+| Lint + Format | **biome** | 单工具替代 eslint + prettier |
+| 类型检查 | tsc --noEmit | CI 必跑 |
+| 文件扫描 | fast-glob | 扫 `~/.claude/projects/**/*.jsonl` |
+| Debug 日志 | `debug`，`DEBUG=agentgauge:*` | 默认静默 |
+
+**Node 版本兼容**：声明 `"engines": { "node": ">=18" }`。所有 ESM 写法、`fs/promises`、`Web Streams API` 可放心用。
+
+**未来 Hybrid 演进路径**（不预先押注）：v1.0 之后若性能成瓶颈，仿照 esbuild/swc/biome —— Rust 写核心 + npm 包 postinstall 拉对应平台 binary。`npx agentgauge` 命令不变，UX 零退步。
+
+---
+
+## 仓库结构（实施版）
 
 ```
 agentgauge/
-├── agentgauge/
-│   ├── __init__.py          # 版本号 + 包级 docstring（含 RTK 致谢）
-│   ├── cli.py               # CLI 入口：analyze / savings / agents
-│   ├── tool_index.py        # 双格式 tool_use_id → (name, input) 索引（纯函数）
-│   ├── profiles.py          # 16 Agent 指纹库 + 三层 identify()
-│   ├── breakdown.py         # token 归因：per-section + per-tool
-│   ├── noise.py             # L0 噪声估算（adapted from RTK）
-│   ├── logs.py              # [v0.2] 本地 Agent 日志读取
-│   └── daemon/              # [v0.3+] 常驻后台：tail 日志 + 增量聚合 + IPC
-├── examples/                # 脱敏样例请求体
-├── tests/                   # pytest 单测
-├── pyproject.toml
-└── README.md                # 含 Credits & Prior Art + 16 Agent 表 + quickstart
+├── src/
+│   ├── cli.ts                  # 入口：analyze / proxy / watch / update-pricing
+│   ├── parsers/
+│   │   ├── claude-code.ts      # ~/.claude/projects/**/*.jsonl
+│   │   ├── codex.ts            # v0.2
+│   │   └── types.ts            # 归一化 Session / Turn / Message
+│   ├── attribution/
+│   │   ├── tokenize.ts         # 7 类 token 归因
+│   │   ├── pricing.ts          # 模型定价 + 远程更新（zod 校验）
+│   │   └── cost.ts             # cost / savings 计算器
+│   ├── detectors/
+│   │   ├── d1-tool-bloat.ts
+│   │   ├── d2-cache-break.ts
+│   │   ├── d3-dup-results.ts
+│   │   ├── d4-oversize.ts
+│   │   ├── d5-compactable.ts
+│   │   └── index.ts            # 注册表 + Finding 类型
+│   ├── identify/
+│   │   └── profiles.ts         # 16 Agent 指纹（三层识别）
+│   ├── render/
+│   │   ├── terminal.ts         # 默认终端报告（picocolors + cli-progress）
+│   │   ├── html.ts             # --html 单文件输出
+│   │   └── json.ts             # --json
+│   ├── tui/                    # v0.3：Ink components
+│   │   └── watch.tsx
+│   └── lib/                    # glob / fs / log / time 工具
+├── tests/                      # vitest（与 src/ 同名 *.test.ts）
+├── examples/                   # 脱敏样例请求体（小，便于复现）
+├── assets/
+│   └── pricing.json            # 内置定价快照
+├── docs/
+│   └── product/
+│       └── agentgauge-prd.md   # 战略 PRD（仓内对外文档）
+├── package.json
+├── tsconfig.json
+├── biome.json
+├── tsup.config.ts
+├── vitest.config.ts
+├── LICENSE                     # MIT
+└── README.md                   # 含 Credits & Prior Art + quickstart
 ```
-
-> 语言/形态最终选型见设计文档 Q1。核心库语言与常驻 GUI 客户端语言可不同（库一种、客户端一种）。
 
 ---
 
 ## 工作约定
 
-- **包管理**：Python 侧统一用 `uv`（与 synrouter 一致）。
-- **文档位置**：策略/PRD 文档留在 obsidian，**不进本仓**；仓内只放面向用户的 README 与开发者 docs。
-- **commit 格式**：`<type>: <description>`（feat / fix / refactor / docs / test / chore / perf / ci）。不加 AI 协作署名（全局 `~/.claude/settings.json` 已禁用）。
-- **macOS AppleDouble**：`._*` 文件不要 commit；安装 wheel 前若被干扰，先 `find . -name "._*" -delete`。
-- **任何提交前**：至少跑 `pytest -q` 与 `ruff check`。
-- **Python 版本**：兼容 3.9+（本机系统 python 是 3.9.6）。从 synrouter 移植的代码用 3.10+ 语法（`tuple[...]` / `X | None`），移植时**必须降级为 3.9 兼容**（`Tuple`/`Optional`，`from __future__ import annotations`）。
+- **包管理**：pnpm（开发）；用户端用 `npx agentgauge` 或 `npm i -g agentgauge`。
+- **文档位置**：仓内 `docs/agentgauge-prd.md` 是单一权威 PRD；策略性 / 增长向 / HN 帖子草稿留在 obsidian 不进本仓。
+- **commit 格式**：`<type>: <description>`（feat / fix / refactor / docs / test / chore / perf / ci）。不加 AI 协作署名。
+- **macOS AppleDouble**：`._*` 文件不要 commit；`.gitignore` 已包含。
+- **任何提交前必跑**：
+  ```
+  pnpm test            # vitest
+  pnpm biome check .   # lint + format
+  pnpm tsc --noEmit    # 类型
+  ```
+- **永不抛异常的代码路径**：所有 analyze / parse / detector 路径对畸形输入返回降级结果或空对象，不得 crash。`parsers/` 必须能跑通 fuzzer 级别的损坏 JSONL。
+- **不引入网络副作用**：除 `update-pricing` 子命令外，任何模块都不允许 import `node:net` / `node:http` / `fetch` 做出站请求。隐私承诺是 HN 信任基础。
 
 ---
 
-## 从 Synrouter 移植代码的脱敏红线（CRITICAL）
+## 算法参考来源（不是代码搬运）
 
-> 本仓为公开 MIT 仓库。任何从私有 monorepo 抽取的代码，发布前必须脱敏。
+> Synrouter 闭源 monorepo 中以下模块只作为**算法心智模型**参考，不直接复制粘贴。
 
-| 源（私有 monorepo） | 处理 |
-|---|---|
-| `transform/tool_compress/tool_index.py` | 直接搬（纯函数，无敏感信息），降级 3.9 语法 |
-| `transform/session_fingerprint.py` 的三层 identify + 工具签名 | 抽出 → profiles.py；**改 `x-synrouter-agent` → `x-agent-hint`**；去掉 fingerprint compute / mode 推断中的内部字段 |
-| `transform/tool_compress/agent_registry.py` 的 quirk 注释 | 抽出 quirk 文字 → profiles.py 的 notes；**去掉 trim_head_tokens / l1_filter_set / protected_tools 等内部调参** |
-| `transform/tool_compress/l0_noise.py` | 抽出 L0 五阶段 → noise.py；**`[synrouter: ...]` 标记改中性文案**；保留 RTK 致谢 |
-| 任何 `sk-sr-*` / Supabase URL / LiteLLM / DB / fly / 内部域名引用 | ❌ 一律删除，不得出现 |
+| 算法主题 | Synrouter 参考位置 | agentgauge 重写位置 |
+|----------|----------------------|---------------------|
+| 双格式 tool_use_id → (name, input) 索引 | `transform/tool_compress/tool_index.py` | `src/parsers/types.ts` 内联 |
+| 三层 Agent identify | `transform/session_fingerprint.py` | `src/identify/profiles.ts` |
+| Agent quirk 注释（16 Agent 全量） | `transform/tool_compress/agent_registry.py` | `src/identify/profiles.ts` 注释段 |
+| L0 五阶段噪声估算 | `transform/tool_compress/l0_noise.py` | `src/detectors/d3-dup-results.ts` 等 |
+| cache_control 注入逻辑（仅参考，不实现） | `transform/cache_inject.py`（SPEC-002） | 不实现，标 ⚡ 指向 synrouter |
+| tool_result 截断阈值（仅参考） | `transform/tool_trim.py`（SPEC-003） | `d4-oversize.ts` 用其阈值常量 |
 
-**发布前红线 grep（必须 0 命中）**：
+**规则**：读懂 → 提炼算法 → TypeScript 重写 → 在 PR 描述里注明"算法参考自 synrouter 的 X 模块"。**不复制任何 synrouter 内部命名**（`sk-sr-*` / `x-synrouter-*` / `synrouter_gateway.*`），用中性命名。
 
-```bash
-grep -rEi 'synrouter|sk-sr|supabase|litellm|mggworks|fly\.io|x-synrouter' . \
-  --include='*.py' --include='*.md' --include='*.toml'
-```
+---
 
-**RTK 致谢三处，缺一不可**：
-1. README 顶部 `Credits & Prior Art` 段落（RTK + MIT + 链接 + "they pioneered this at the CLI layer; we measure it at the API/log layer"）。
-2. `noise.py` 文件头注释保留 "adapted from RTK"。
-3. HN 帖正文主动提 RTK。
+## RTK 致谢三处（不可缺）
+
+agentgauge 的 L0 噪声估算思路源自 [RTK (rtk-ai/rtk, MIT)](https://github.com/rtk-ai/rtk)。三处致谢缺一不可：
+
+1. **README 顶部** `Credits & Prior Art` 段落（RTK + MIT + 链接 + 一句"they pioneered this at the CLI layer; we measure it at the session-log layer"）。
+2. **`src/detectors/d3-dup-results.ts` / 噪声相关模块文件头注释** 保留 "noise detection adapted from RTK"。
+3. **HN / Reddit launch 帖子正文** 主动提 RTK。
 
 ---
 
 ## 测试与质量门
 
-- `pytest -q`，覆盖率目标参考 `~/.claude/rules/common/testing.md` 的 80%。
-- 关键模块（tool_index / profiles / noise / breakdown）开 `mypy --strict`。
-- **永不抛异常**：所有 analyze 路径对畸形输入返回空/降级结果，不得 crash（移植自 synrouter 的 `build_index` 已遵循此约定）。
-- 提交前至少跑 `pytest -q` 与 `ruff check`。
+- **覆盖率目标**：核心模块 (parsers / attribution / detectors) ≥ 80%；render / cli ≥ 60%。
+- **关键纯函数**测试用真实 fixture（`examples/` 脱敏样例）而不是 mock。
+- **黄金报告测试**：`render/terminal.ts` 和 `render/html.ts` 用 snapshot 测试锁住输出格式，防止偷偷改坏 UX。
+- **CI 必跑**：`pnpm test` + `pnpm biome check` + `pnpm tsc --noEmit`，三个绿才能 merge。
 
 ---
 
 ## 规则引用
 
-- 默认继承 `~/.claude/rules/common/*` + Python 语言规则；若做 GUI/前端，叠加 `~/.claude/rules/web/*`。
+- 默认继承 `~/.claude/rules/common/*` + TypeScript / Node 语言规则；若做 TUI（Ink），叠加 `~/.claude/rules/web/*`（React 通用规则适用 Ink）。
 - 项目级 > 全局级，本文件优先。
