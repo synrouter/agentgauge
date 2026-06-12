@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { defineCommand } from "citty";
-import { pricingTableSchema } from "../../attribution/pricing.js";
+import { loadPricingTable, pricingTableSchema } from "../../attribution/pricing.js";
 import { EXIT } from "../../lib/exit.js";
 
 export const updatePricingCommand = defineCommand({
@@ -33,6 +33,12 @@ export const updatePricingCommand = defineCommand({
     }
     if (args.dryRun) {
       process.stdout.write(`${JSON.stringify(table.data, null, 2)}\n`);
+      return;
+    }
+    if (!args.force && loadPricingTable().version === table.data.version) {
+      process.stdout.write(
+        `Pricing already at version ${table.data.version}; use --force to overwrite.\n`,
+      );
       return;
     }
     const path = join(homedir(), ".agentgauge", "pricing.json");

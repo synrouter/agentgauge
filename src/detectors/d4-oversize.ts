@@ -13,26 +13,25 @@ export function d4Oversize(ctx: DetectorContext): Finding[] {
   const allText = ctx.session.turns
     .flatMap((turn) => turn.messages.map((message) => message.text))
     .join("\n");
+  const findings: Finding[] = [];
   for (const turn of ctx.session.turns) {
     for (const message of turn.messages) {
       for (const result of message.toolResults) {
         const tokens = approximateTokens(result.content);
         if (tokens > THRESHOLDS.oversizeTokens && !referencedLater(result.content, allText)) {
-          return [
-            {
-              id: "D4",
-              severity: tokens > THRESHOLDS.oversizeMedTokens ? "med" : "low",
-              title: "Oversized tool result was kept in context",
-              evidence: [
-                `${result.toolName ?? "tool"} result is about ${tokens} tokens and is not referenced later`,
-              ],
-              savings: savingsFromTokens(tokens * 0.7),
-              fix_path: "Summarize large outputs before carrying them into later turns.",
-            },
-          ];
+          findings.push({
+            id: "D4",
+            severity: tokens > THRESHOLDS.oversizeMedTokens ? "med" : "low",
+            title: "Oversized tool result was kept in context",
+            evidence: [
+              `${result.toolName ?? "tool"} result is about ${tokens} tokens and is not referenced later`,
+            ],
+            savings: savingsFromTokens(tokens * 0.7),
+            fix_path: "Summarize large outputs before carrying them into later turns.",
+          });
         }
       }
     }
   }
-  return [];
+  return findings;
 }

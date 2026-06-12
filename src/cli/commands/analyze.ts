@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { defineCommand } from "citty";
-import { analyze } from "../../lib/analysis.js";
+import { analyze, invalidLastMessage } from "../../lib/analysis.js";
 import { EXIT } from "../../lib/exit.js";
 import { formatIsoMinute } from "../../lib/time.js";
 import { renderHtml, renderJson, renderTerminal } from "../../render/index.js";
@@ -49,6 +49,12 @@ export const analyzeCommand = defineCommand({
       process.exitCode = EXIT.USAGE;
       return;
     }
+    const lastError = invalidLastMessage(args.all ? undefined : stringOrTrue(args.last));
+    if (lastError) {
+      console.error(lastError);
+      process.exitCode = EXIT.USAGE;
+      return;
+    }
     const result = await analyze({
       all: args.all,
       last: args.all ? undefined : stringOrTrue(args.last),
@@ -58,6 +64,7 @@ export const analyzeCommand = defineCommand({
       session: args.session,
       agent: args.agent,
       model: args.model,
+      includeContent: args.includeContent,
       detectors: list(args.detectors),
       skipDetectors: list(args.skipDetectors),
       minSeverity: severity(args.minSeverity),

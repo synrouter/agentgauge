@@ -14,6 +14,9 @@ export function d3DupResults(ctx: DetectorContext): Finding[] {
   let total = 0;
   for (const turn of ctx.session.turns) {
     for (const message of turn.messages) {
+      // Continuation/resume replays repeat earlier results without re-billing
+      // them as fresh tool output (DESIGN-AG-003 false-positive defense).
+      if (message.isSystemInjected) continue;
       for (const result of message.toolResults) {
         const tokens = approximateTokens(result.content);
         total += tokens;

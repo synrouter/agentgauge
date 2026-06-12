@@ -42,15 +42,28 @@ export function redactContent(content: string): string {
   return `${content.slice(0, 80)} ... ${content.slice(-40)} [${content.length} chars]`;
 }
 
+// Any absolute POSIX path (covers /Users, /home, /tmp, /mnt/c, ...) plus
+// Windows drive paths; basename-only output is the privacy guarantee (FR-AG-6).
+const ABSOLUTE_PATH_RE = /(?:[A-Za-z]:)?(?:\/[\w.@+-]+){2,}/g;
+
+function redactEvidence(line: string, includeContent: boolean): string {
+  const pathless = line.replace(ABSOLUTE_PATH_RE, (match) => redactPath(match));
+  return includeContent ? pathless : redactContent(pathless);
+}
+
 /** @spec SPEC-AG-004, R4 — build-time report redaction */
-export function buildReportModel(input: {
-  version: string;
-  sessions: Session[];
-  identity: AgentIdentity;
-  attribution: Attribution;
-  cost: CostBreakdown;
-  findings: Finding[];
-}): ReportModel {
+export function buildReportModel(
+  input: {
+    version: string;
+    sessions: Session[];
+    identity: AgentIdentity;
+    attribution: Attribution;
+    cost: CostBreakdown;
+    findings: Finding[];
+  },
+  opts: { includeContent?: boolean } = {},
+): ReportModel {
+  const includeContent = opts.includeContent ?? false;
   return {
     version: input.version,
     schema_version: 1,
@@ -75,9 +88,7 @@ export function buildReportModel(input: {
     },
     findings: input.findings.map((finding) => ({
       ...finding,
-      evidence: finding.evidence.map((line) =>
-        line.replace(/(?:\/Users|\/tmp)\/[^\s:]+/g, (match) => redactPath(match)),
-      ),
+      evidence: finding.evidence.map((line) => redactEvidence(line, includeContent)),
     })),
   };
 }

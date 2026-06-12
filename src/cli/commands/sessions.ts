@@ -1,5 +1,5 @@
 import { defineCommand } from "citty";
-import { selectorFromOptions } from "../../lib/analysis.js";
+import { invalidLastMessage, selectorFromOptions } from "../../lib/analysis.js";
 import { EXIT } from "../../lib/exit.js";
 import { discoverClaudeSessionFiles } from "../../lib/glob.js";
 
@@ -17,9 +17,24 @@ export const sessionsCommand = defineCommand({
     last: { type: "string", required: false },
   },
   async run({ args }) {
+    const lastError = invalidLastMessage(args.last);
+    if (lastError) {
+      console.error(lastError);
+      process.exitCode = EXIT.USAGE;
+      return;
+    }
     const files = await discoverClaudeSessionFiles(selectorFromOptions(args));
+    // Sortable from file metadata alone: time (mtime, default) and id.
+    // cost/tokens/turns need a full parse of every file; deferred to v0.2.
+    const sorted =
+      args.sortBy === "id"
+        ? [...files].sort((a, b) => a.sessionId.localeCompare(b.sessionId))
+        : files;
+    if (args.sortBy && !["time", "id"].includes(args.sortBy)) {
+      console.error(`Unsupported --sort-by "${args.sortBy}" (supported: time, id). Using time.`);
+    }
     const limit = Number(args.limit ?? 50);
-    const rows = files.slice(0, Number.isFinite(limit) ? limit : 50);
+    const rows = sorted.slice(0, Number.isFinite(limit) ? limit : 50);
     if (rows.length === 0) {
       console.error("No Claude Code sessions found.");
       process.exitCode = EXIT.NO_DATA;

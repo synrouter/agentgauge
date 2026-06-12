@@ -3,6 +3,10 @@ export const THRESHOLDS = {
   toolIdleRatioHigh: 0.5,
   toolIdleSavingsHigh: 0.5,
   cacheBreakSavingsHigh: 1,
+  cacheBreakReadDropMin: 200,
+  cacheBreakWriteJumpMin: 200,
+  // PRD FR-AG-4 D2: loss ≈ rewritten cache_creation tokens × 1.25 × input price
+  cacheWriteCostMultiplier: 1.25,
   duplicateMinCount: 3,
   duplicateRatioMed: 0.2,
   oversizeTokens: 10_000,

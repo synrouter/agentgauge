@@ -20,6 +20,7 @@ export interface AnalyzeOptions extends DetectorOptions {
   session?: string;
   agent?: string;
   model?: string;
+  includeContent?: boolean;
 }
 
 export interface AnalysisOutput {
@@ -37,6 +38,14 @@ export function packageVersion(): string {
   } catch {
     return "0.1.0";
   }
+}
+
+/** Returns an error message when --last is a string but not a valid duration like 7d/24h. */
+export function invalidLastMessage(last: true | string | undefined): string | undefined {
+  if (typeof last !== "string") return undefined;
+  return parseDuration(last)
+    ? undefined
+    : `Invalid --last value "${last}". Use a duration like 7d or 24h, or pass --last with no value.`;
 }
 
 export function selectorFromOptions(opts: AnalyzeOptions, now = new Date()): SessionSelector {
@@ -89,13 +98,16 @@ export async function analyze(opts: AnalyzeOptions = {}): Promise<AnalysisOutput
       warn: opts.warn,
     },
   );
-  const report = buildReportModel({
-    version: packageVersion(),
-    sessions,
-    identity,
-    attribution,
-    cost,
-    findings,
-  });
+  const report = buildReportModel(
+    {
+      version: packageVersion(),
+      sessions,
+      identity,
+      attribution,
+      cost,
+      findings,
+    },
+    { includeContent: opts.includeContent },
+  );
   return { report, sessions, warnings: cost.warnings };
 }

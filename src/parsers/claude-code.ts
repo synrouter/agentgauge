@@ -72,6 +72,9 @@ function textFromContent(content: unknown): string {
   return content
     .map((block) => {
       if (!block || typeof block !== "object") return "";
+      // tool_result content is tracked separately in toolResults; counting it
+      // here too would double-attribute the same tokens (SPEC-AG-002, R1).
+      if ((block as { type?: unknown }).type === "tool_result") return "";
       if ("text" in block && typeof block.text === "string") return block.text;
       if ("content" in block && typeof block.content === "string") return block.content;
       return "";

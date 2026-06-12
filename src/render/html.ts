@@ -12,7 +12,7 @@ export function renderHtml(model: ReportModel): string {
   const findings = model.findings
     .map(
       (finding) =>
-        `<details><summary><b>${esc(finding.id)}</b> ${esc(finding.title)} <span>$${finding.savings.conservative_usd.toFixed(2)}${finding.estimated ? "~" : ""}</span>${finding.fix_url ? ` <a href="${finding.fix_url}">⚡</a>` : ""}</summary><ul>${finding.evidence.map((e) => `<li>${esc(e)}</li>`).join("")}</ul><p>${esc(finding.fix_path)}</p></details>`,
+        `<details><summary><b>${esc(finding.id)}</b> ${esc(finding.title)} <span>$${finding.savings.conservative_usd.toFixed(2)}${finding.estimated ? "~" : ""}</span>${finding.fix_url ? ` <a href="${esc(finding.fix_url)}">⚡</a>` : ""}</summary><ul>${finding.evidence.map((e) => `<li>${esc(e)}</li>`).join("")}</ul><p>${esc(finding.fix_path)}</p></details>`,
     )
     .join("");
   const sections = model.aggregate.sections

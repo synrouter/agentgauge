@@ -29,6 +29,17 @@ describe("detectors", () => {
     expect(d0Noise(await ctx("noisy-sidechain.jsonl"))[0]?.id).toBe("D0");
   });
 
+  it("counts cursor-control ANSI and keeps stage sums within total", () => {
+    // [1A (cursor up) and [2K (erase line) are how build tools redraw progress.
+    const cursor = estimateNoise("[1A[2Kcompiling 50%\n[1A[2Kcompiling 99%\n");
+    expect(cursor.stages.ansi).toBeGreaterThan(0);
+    // Per-line ceil rounding lets the raw stage sum slightly exceed the whole-string
+    // estimate, but the reported noisyTokens must stay capped at the total.
+    const stats = estimateNoise("[32m[===>] 10%[0m\n".repeat(5));
+    expect(stats.noisyTokens).toBeLessThanOrEqual(stats.totalTokens);
+    expect(stats.stages.progress).toBeGreaterThan(0);
+  });
+
   it("runs registry with filtering and failure isolation", async () => {
     const context = await ctx("noisy-sidechain.jsonl");
     const original = DETECTORS.D5!;
@@ -75,6 +86,15 @@ describe("detectors", () => {
     const oversized = await ctx("clean-session.jsonl");
     oversized.session.turns[2]!.messages[0]!.toolResults[0]!.content = "x".repeat(45_000);
     expect(d4Oversize(oversized)[0]?.id).toBe("D4");
+
+    // D4 must report every oversized result, not just the first (PRD FR-AG-4).
+    const multi = await ctx("clean-session.jsonl");
+    const base = multi.session.turns[2]!.messages[0]!.toolResults[0]!;
+    multi.session.turns[2]!.messages[0]!.toolResults = [
+      { ...base, content: "a".repeat(45_000) },
+      { ...base, content: "b".repeat(45_000) },
+    ];
+    expect(d4Oversize(multi)).toHaveLength(2);
 
     const baseTurn = oversized.session.turns[0]!;
     const turns: Turn[] = Array.from({ length: 6 }, (_, index) => ({

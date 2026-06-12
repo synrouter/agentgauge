@@ -53,7 +53,19 @@ export function approximateTokens(text: string): number {
   return Math.max(1, Math.ceil(text.length / 4));
 }
 
-function measurable(turn: Turn): {
+function hasBillableUsage(turn: Turn): boolean {
+  return turn.messages.some((message) => {
+    const usage = message.usage;
+    return (
+      usage.inputTokens > 0 ||
+      usage.outputTokens > 0 ||
+      usage.cacheReadInputTokens > 0 ||
+      usage.cacheCreationInputTokens > 0
+    );
+  });
+}
+
+function messageInputText(turn: Turn): {
   toolResults: number;
   userInput: number;
   history: number;
@@ -70,9 +82,36 @@ function measurable(turn: Turn): {
       toolResults += approximateTokens(resultText);
       userInput += approximateTokens(message.text);
     }
-    if (message.role !== "system") history += approximateTokens(message.text);
+    if (message.role !== "system") {
+      history += approximateTokens(message.text);
+      history += approximateTokens(message.toolResults.map((result) => result.content).join("\n"));
+    }
   }
   return { toolResults, userInput, history, output };
+}
+
+function measurableForRequest(
+  turns: Turn[],
+  usageTurnIndex: number,
+  previousUsageIndex: number,
+): {
+  toolResults: number;
+  userInput: number;
+  history: number;
+} {
+  let toolResults = 0;
+  let userInput = 0;
+  let history = 0;
+  for (let index = 0; index < usageTurnIndex; index += 1) {
+    const measured = messageInputText(turns[index]!);
+    if (index > previousUsageIndex) {
+      toolResults += measured.toolResults;
+      userInput += measured.userInput;
+    } else {
+      history += measured.history;
+    }
+  }
+  return { toolResults, userInput, history };
 }
 
 function scaleInputs(
@@ -116,18 +155,20 @@ export function attributeSession(session: Session, agent: AgentIdentity): Attrib
     session.turns.flatMap((turn) => turn.messages.map((message) => message.usage)),
   );
   const residuals: number[] = [];
-  const turnInputs = session.turns.map((turn) => {
+  let previousUsageIndex = -1;
+  const turnInputs = session.turns.flatMap((turn, turnIndex) => {
+    if (!hasBillableUsage(turn)) return [];
     const turnUsage = sumUsage(turn.messages.map((message) => message.usage));
-    const measured = measurable(turn);
+    const measured = measurableForRequest(session.turns, turnIndex, previousUsageIndex);
+    previousUsageIndex = turnIndex;
     const scaled = scaleInputs(turnUsage, measured);
     residuals.push(scaled.residual);
-    return { turn, turnUsage, measured, scaled };
+    return [{ turn, turnUsage, scaled }];
   });
-  const stablePrefix = median(residuals);
-  const systemShare = Math.round(stablePrefix * 0.35);
-  const toolShare = Math.max(0, stablePrefix - systemShare);
+  const stablePrefix = median(residuals.filter((value) => value > 0));
   const turns: TurnAttribution[] = turnInputs.map(({ turn, turnUsage, scaled }) => {
-    const system = Math.min(systemShare, scaled.residual);
+    const prefix = stablePrefix > 0 ? Math.min(stablePrefix, scaled.residual) : scaled.residual;
+    const system = Math.round(prefix * 0.35);
     const tools = Math.max(0, scaled.residual - system);
     return {
       turnId: turn.id,

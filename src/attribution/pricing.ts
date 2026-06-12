@@ -45,11 +45,18 @@ function normalizeModel(value: string): string {
 export function resolveModelPrice(table: PricingTable, model?: string): ModelPrice | undefined {
   if (!model || model === "<synthetic>") return undefined;
   const normalized = normalizeModel(model);
+  // Exact match wins; otherwise the longest matching alias does, so a future
+  // "claude-opus-4" entry can never shadow "claude-opus-4-1" (ccusage parity).
+  let best: { price: ModelPrice; length: number } | undefined;
   for (const [id, price] of Object.entries(table.models)) {
-    const names = [id, ...price.aliases].map(normalizeModel);
-    if (names.some((name) => normalized === name || normalized.includes(name))) return price;
+    for (const name of [id, ...price.aliases].map(normalizeModel)) {
+      if (normalized === name) return price;
+      if (normalized.includes(name) && name.length > (best?.length ?? 0)) {
+        best = { price, length: name.length };
+      }
+    }
   }
-  return undefined;
+  return best?.price;
 }
 
 export function isBillableModel(model?: string): boolean {

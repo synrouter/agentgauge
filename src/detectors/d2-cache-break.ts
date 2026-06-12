@@ -10,14 +10,17 @@ export function d2CacheBreak(ctx: DetectorContext): Finding[] {
     const current = ctx.attribution.turns[index]!;
     const readDrop = prev.usage.cacheReadInputTokens - current.usage.cacheReadInputTokens;
     const writeJump = current.usage.cacheCreationInputTokens - prev.usage.cacheCreationInputTokens;
-    if (readDrop > 200 && writeJump > 200) {
-      const savings = savingsFromTokens(writeJump, 3, 0.8);
+    if (
+      readDrop > THRESHOLDS.cacheBreakReadDropMin &&
+      writeJump > THRESHOLDS.cacheBreakWriteJumpMin
+    ) {
+      const savings = savingsFromTokens(writeJump * THRESHOLDS.cacheWriteCostMultiplier, 3, 0.8);
       findings.push({
         id: "D2",
         severity: savings.conservative_usd > THRESHOLDS.cacheBreakSavingsHigh ? "high" : "med",
         title: "Cache prefix appears to break between turns",
         evidence: [
-          `turn ${index + 1}: cache_read dropped ${readDrop}, cache_creation rose ${writeJump}`,
+          `between turns ${index} and ${index + 1}: cache_read dropped ${readDrop}, cache_creation rose ${writeJump}`,
         ],
         savings,
         fix_path: "Keep stable prompt/tool prefixes byte-identical across turns.",

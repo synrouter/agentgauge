@@ -14,20 +14,32 @@ function lines(text: string): string[] {
   return text.split(/\r?\n/);
 }
 
+const ESC = String.fromCharCode(27);
+// CSI with any final byte (colors, cursor moves, erase) plus OSC/string sequences,
+// not just SGR `...m` — build/test tools emit cursor control heavily.
+const ANSI_RE = new RegExp(
+  `${ESC}\\[[0-9;?]*[ -/]*[@-~]|${ESC}\\][^${ESC}\\x07]*(?:\\x07|${ESC}\\\\)?|${ESC}[@-Z\\\\^_]`,
+  "g",
+);
+
 /** @spec SPEC-AG-003, R2 — L0 compressible noise estimator */
 export function estimateNoise(content: string): NoiseStats {
   const stages: Record<string, number> = { ansi: 0, progress: 0, repeated: 0, whitespace: 0 };
-  const ansiMatches = content.match(new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g")) ?? [];
+  // Stages strip what they count before handing off, so each character is
+  // attributed to at most one stage (DESIGN-AG-003, D4 first-come-first-served).
+  const ansiMatches = content.match(ANSI_RE) ?? [];
   stages.ansi = approximateTokens(ansiMatches.join(""));
+  const stripped = content.replace(ANSI_RE, "");
   const seen = new Map<string, number>();
-  for (const line of lines(content)) {
+  for (const line of lines(stripped)) {
     const normalized = line.trim();
     if (!normalized) {
-      stages.whitespace = (stages.whitespace ?? 0) + 1;
+      stages.whitespace = (stages.whitespace ?? 0) + approximateTokens(line);
       continue;
     }
     if (/^\[[=>\-\s#]+\]\s*\d+%?$/.test(normalized) || /spinner|progress/i.test(normalized)) {
       stages.progress = (stages.progress ?? 0) + approximateTokens(line);
+      continue;
     }
     seen.set(normalized, (seen.get(normalized) ?? 0) + 1);
   }

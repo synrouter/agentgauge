@@ -1,0 +1,26 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renderers > locks terminal and html output with golden snapshots > html 1`] = `"<!doctype html><html lang="en"><head><meta charset="utf-8"><title>agentgauge report</title><style>body{margin:0;background:#111;color:#eee;font:14px ui-monospace,SFMono-Regular,Menlo,monospace}main{max-width:980px;margin:auto;padding:32px}a{color:#71d6ff}.hero{padding:28px 0;border-bottom:1px solid #333}.nums{display:flex;gap:18px;flex-wrap:wrap}.num{font-size:24px;font-weight:700}table{width:100%;border-collapse:collapse;margin:20px 0}td,th{border-bottom:1px solid #333;padding:8px;text-align:left}details{border:1px solid #333;padding:12px;margin:10px 0;border-radius:6px}summary{cursor:pointer}.cta{display:inline-block;margin-top:16px;padding:10px 14px;background:#eee;color:#111;text-decoration:none;border-radius:6px}</style></head><body><main><section class="hero"><h1>agentgauge 0.0.0</h1><div class="nums"><div><div>COST</div><div class="num">$0.03</div></div><div><div>POTENTIAL SAVINGS</div><div class="num">$0.00</div></div><div><div>CACHE HIT</div><div class="num">12.4%</div></div></div><a class="cta" href="https://synrouter.ai/connect?source=agentgauge">Explore automatic fixes</a></section><h2>Breakdown</h2><table><tbody><tr><td>system_prompt</td><td>~1833</td><td>$0.01</td></tr><tr><td>tool_definitions</td><td>~3769</td><td>$0.01</td></tr><tr><td>tool_results</td><td>33</td><td>$0.00</td></tr><tr><td>history</td><td>58</td><td>$0.00</td></tr><tr><td>user_input</td><td>7</td><td>$0.00</td></tr><tr><td>assistant_output</td><td>330</td><td>$0.00</td></tr><tr><td>cache_read</td><td>960</td><td>$0.00</td></tr><tr><td>cache_write</td><td>1060</td><td>$0.00</td></tr></tbody></table><h2>Findings</h2><details><summary><b>D2</b> Cache prefix appears to break between turns <span>$0.00~</span> <a href="https://synrouter.ai/connect?source=agentgauge&amp;detector=D2">⚡</a></summary><ul><li>between turns 1 and 2: cache_read dropped 740, cache_creation rose 780</li></ul><p>Keep stable prompt/tool prefixes byte-identical across turns.</p></details><details><summary><b>D0</b> Compressible tool output noise <span>$0.00</span> <a href="https://synrouter.ai/connect?source=agentgauge&amp;detector=D0">⚡</a></summary><ul><li>28/33 tool-result tokens look compressible</li></ul><p>Trim ANSI, progress bars, repeated lines, and whitespace before replaying tool output.</p></details><footer><a href="https://synrouter.ai/connect?source=agentgauge">synrouter.ai/connect</a></footer></main></body></html>"`;
+
+exports[`renderers > locks terminal and html output with golden snapshots > terminal 1`] = `
+"agentgauge 0.0.0 — session report
+COST $0.03   POTENTIAL SAVINGS $0.00   CACHE HIT 12.4%
+
+Breakdown
+  system_prompt         ~1833 tok  $0.01
+  tool_definitions      ~3769 tok  $0.01
+  tool_results             33 tok  $0.00
+  history                  58 tok  $0.00
+  user_input                7 tok  $0.00
+  assistant_output        330 tok  $0.00
+  cache_read              960 tok  $0.00
+  cache_write            1060 tok  $0.00
+
+Findings
+1. [MED ] $0.00~ Cache prefix appears to break between turns ⚡
+2. [MED ] $0.00 Compressible tool output noise ⚡
+
+An open-source funnel for synrouter.ai
+Try agentgauge --help for more commands
+"
+`;

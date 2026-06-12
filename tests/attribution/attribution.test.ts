@@ -24,6 +24,12 @@ describe("attribution and cost", () => {
     const session = await parseClaudeSessionFile(fixture("clean-session.jsonl"));
     const attr = attributeSession(session, identify(session));
     const cost = computeCost(attr, bundledPricingTable());
+    const section = (key: string) => attr.sections.find((item) => item.key === key)?.tokens ?? 0;
+    expect(section("system_prompt")).toBeGreaterThan(0);
+    expect(section("tool_definitions")).toBeGreaterThan(0);
+    expect(section("tool_results")).toBeGreaterThan(0);
+    expect(section("user_input")).toBeGreaterThan(0);
+    expect(section("history")).toBeGreaterThan(0);
     expect(cost.totalUSD).not.toBeNull();
     expect(cost.cacheHitRate).toBeGreaterThan(0);
     expect(cost.sections.reduce((sum, section) => sum + (section.costUSD ?? 0), 0)).toBeGreaterThan(
@@ -38,5 +44,71 @@ describe("attribution and cost", () => {
     expect(resolveModelPrice(table, "claude-sonnet-4-5-20250929")).toBeDefined();
     expect(isBillableModel("<synthetic>")).toBe(false);
     expect(approximateTokens("abcd")).toBe(1);
+  });
+
+  it("prefers exact then longest alias so version prefixes cannot shadow", () => {
+    const price = (input: number) => ({
+      aliases: [],
+      inputPerMillion: input,
+      outputPerMillion: input * 5,
+      cacheReadMultiplier: 0.1,
+      cacheWriteMultiplier: 1.25,
+    });
+    const table = {
+      version: "test",
+      models: {
+        "claude-opus-4": price(10),
+        "claude-opus-4-1": price(15),
+      },
+    };
+    expect(resolveModelPrice(table, "claude-opus-4-1")?.inputPerMillion).toBe(15);
+    expect(resolveModelPrice(table, "claude-opus-4-1-20250805")?.inputPerMillion).toBe(15);
+    expect(resolveModelPrice(table, "claude-opus-4-20250514")?.inputPerMillion).toBe(10);
+  });
+
+  it("locks Anthropic usage semantics: input and cache tokens are disjoint", () => {
+    // Anthropic usage reports input_tokens EXCLUSIVE of cache_read/cache_creation
+    // (unlike OpenAI). Each component is priced independently and summed.
+    const table = {
+      version: "test",
+      models: {
+        "claude-sonnet-4-5": {
+          aliases: [],
+          inputPerMillion: 3,
+          outputPerMillion: 15,
+          cacheReadMultiplier: 0.1,
+          cacheWriteMultiplier: 1.25,
+        },
+      },
+    };
+    const usage = {
+      inputTokens: 1000,
+      outputTokens: 100,
+      cacheReadInputTokens: 800,
+      cacheCreationInputTokens: 120,
+    };
+    const attribution = {
+      sessionId: "s",
+      agent: { agent: "claude-code", confidence: 1 },
+      usage,
+      sections: [],
+      turns: [
+        {
+          turnId: "t1",
+          isSidechain: false,
+          model: "claude-sonnet-4-5",
+          usage,
+          sections: [],
+          residualInputTokens: 0,
+        },
+      ],
+      residuals: [],
+      sidechain: { orchestrator: { tokens: 0, costUSD: null, turns: 1 } },
+    };
+    const cost = computeCost(attribution, table);
+    const expected =
+      (1000 / 1e6) * 3 + (100 / 1e6) * 15 + (800 / 1e6) * 3 * 0.1 + (120 / 1e6) * 3 * 1.25;
+    // totalUSD is rounded to 4 decimal places by roundMoney.
+    expect(cost.totalUSD).toBeCloseTo(expected, 4);
   });
 });

@@ -8,15 +8,13 @@ export function d5Compactable(ctx: DetectorContext): Finding[] {
   if (ctx.session.turns.some((turn) => turn.messages.some((message) => message.isCompactBoundary)))
     return [];
   if (ctx.session.turns.length < 5) return [];
+  // System-injected replays (continuation/resume) are not genuine references
+  // and would defeat the "old context unused" check (DESIGN-AG-003).
+  const realText = (turn: (typeof ctx.session.turns)[number]) =>
+    turn.messages.filter((message) => !message.isSystemInjected).map((message) => message.text);
   const earlyCount = Math.max(1, Math.floor(ctx.session.turns.length * 0.2));
-  const earlyText = ctx.session.turns
-    .slice(0, earlyCount)
-    .flatMap((turn) => turn.messages.map((message) => message.text))
-    .join("\n");
-  const recentText = ctx.session.turns
-    .slice(-5)
-    .flatMap((turn) => turn.messages.map((message) => message.text))
-    .join("\n");
+  const earlyText = ctx.session.turns.slice(0, earlyCount).flatMap(realText).join("\n");
+  const recentText = ctx.session.turns.slice(-5).flatMap(realText).join("\n");
   const sample = earlyText.replace(/\s+/g, " ").slice(0, 30);
   const tokens = approximateTokens(earlyText);
   const historyTokens = ctx.session.turns.reduce(
