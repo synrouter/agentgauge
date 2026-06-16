@@ -4,23 +4,31 @@ exports[`renderers > locks terminal and html output with golden snapshots > html
 
 exports[`renderers > locks terminal and html output with golden snapshots > terminal 1`] = `
 "agentgauge 0.0.0 — session report
-COST $0.03   POTENTIAL SAVINGS $0.00   CACHE HIT 12.4%
+Session   claude-code · examples · 5 turns
+Model     claude-sonnet-4-5
 
-Breakdown
-  system_prompt         ~1833 tok  $0.01
-  tool_definitions      ~3769 tok  $0.01
-  tool_results             33 tok  $0.00
-  history                  58 tok  $0.00
-  user_input                7 tok  $0.00
-  assistant_output        330 tok  $0.00
-  cache_read              960 tok  $0.00
-  cache_write            1060 tok  $0.00
+Sub-agents  1 turns · 1K tok (14% of input)
+COST          $0.03      POTENTIAL SAVINGS    $0.00 (0%)
+TOKENS        8K    in / 330   out                CACHE HIT 12.4%
 
-Findings
-1. [MED ] $0.00~ Cache prefix appears to break between turns ⚡
-2. [MED ] $0.00 Compressible tool output noise ⚡
+TOKEN COMPOSITION (input)
+  tool results     ░░░░░░░░░░░░░░░░░░░░    0%      33  $0.00
+  tool definitions ██████████░░░░░░░░░░  ~49%      4K  $0.01
+  history          ░░░░░░░░░░░░░░░░░░░░    1%      58  $0.00
+  system prompt    █████░░░░░░░░░░░░░░░  ~24%      2K  $0.01
+  user input       ░░░░░░░░░░░░░░░░░░░░    0%       7  $0.00
 
-An open-source funnel for synrouter.ai
-Try agentgauge --help for more commands
+OUTPUT
+  assistant output                                330  $0.00
+
+CACHE
+  cache read                                      960  $0.00
+  cache write                                      1K  $0.00
+
+FINDINGS (2)                                  est. savings
+● MED  D2  Cache prefix appears to break between turns    $0.00~ ⚡
+● MED  D0  Compressible tool output noise                  $0.00 ⚡
+
+⚡ = auto-fixable with synrouter → synrouter.ai/connect
 "
 `;

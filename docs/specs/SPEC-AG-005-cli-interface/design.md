@@ -29,11 +29,11 @@ cli.ts 是纯编排层：解析参数 → 调 parsers → attribution → detect
 **考虑的替代方案**: 单文件 cli.ts——v0.2 加 proxy/watch 后必然超 800 行上限
 **取舍**: 无
 
-### D3: 零网络承诺用 lint 级静态断言守住
+### D3: `update-pricing` 默认从 LiteLLM 拉取价格快照
 
-**理由**: PRD FR-AG-6 是 HN 信任基础，靠 review 记忆不可靠；biome / 自定义脚本断言"除 update-pricing 模块外禁 import node:http(s)/net/undici、禁裸 fetch"
-**考虑的替代方案**: 运行时拦截——复杂且测不全
-**取舍**: 静态断言挡不住动态 import 的恶意绕过；对自家代码库足够
+**理由**: LiteLLM 已经聚合了各模型的最新计费信息；把它作为默认源可以减少手工维护成本，用户也能直接刷新本地缓存
+**考虑的替代方案**: 只保留内置快照——会很快过期；只允许自定义 URL——默认体验太差
+**取舍**: 默认命中网络，故只把网络放在显式命令里
 
 ### D4: 退出码集中在 `lib/exit.ts` 常量 + 类型化错误
 
@@ -60,7 +60,7 @@ const main = defineCommand({
 ## 测试
 
 - `tests/cli/*.test.ts` — 子进程级：退出码、stdout 纯净性、PRD §5.4.4 示例回归
-- 零网络静态断言脚本（CI 步骤）
+- `update-pricing` 默认抓取 LiteLLM；可用 `--url` / `AGENTGAUGE_PRICING_URL` 覆盖
 
 ## 与 synrouter 的边界
 

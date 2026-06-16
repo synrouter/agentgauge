@@ -59,10 +59,45 @@ describe("cli", () => {
     expect(result.status).toBe(0);
     expect(JSON.parse(result.stdout)[0].sessionId).toBe("session");
     expect(list("D0,d1")).toEqual(["D0", "D1"]);
+    expect(list("")).toBeUndefined();
     expect(severity("high")).toBe("high");
+    expect(severity("unknown")).toBeUndefined();
     expect(numberArg("2")).toBe(2);
+    expect(numberArg("not-a-number")).toBeUndefined();
     expect(stringOrTrue(undefined)).toBe(true);
+    expect(stringOrTrue("")).toBe(true);
     expect(selectorFromOptions({ last: "24h" }).since).toBeInstanceOf(Date);
+    expect(
+      selectorFromOptions({ since: "2026-06-10", until: "2026-06-10" }).since?.toISOString(),
+    ).toBe("2026-06-10T00:00:00.000Z");
+    expect(
+      selectorFromOptions({ since: "2026-06-10", until: "2026-06-10" }).until?.toISOString(),
+    ).toBe("2026-06-10T23:59:59.999Z");
+  });
+
+  it("applies inclusive date ranges across the whole day", async () => {
+    const data = mkdtempSync(join(tmpdir(), "agentgauge-range-"));
+    tmp = data;
+    const project = join(data, "project");
+    mkdirSync(project);
+    copyFileSync(fixture("noisy-sidechain.jsonl"), join(project, "older.jsonl"));
+    copyFileSync(fixture("clean-session.jsonl"), join(project, "newer.jsonl"));
+    const result = run(["analyze", "--since", "2026-06-10", "--until", "2026-06-10", "--json"], {
+      AGENTGAUGE_CLAUDE_PROJECTS: data,
+    });
+    expect(result.status).toBe(0);
+    const report = JSON.parse(result.stdout);
+    expect(report.aggregate.tokens.input).toBeGreaterThan(0);
+  });
+
+  it("rejects invalid analyze flag combinations", () => {
+    const data = setupData();
+    const invalidLast = run(["analyze", "--last", "bad"], { AGENTGAUGE_CLAUDE_PROJECTS: data });
+    const jsonQuiet = run(["analyze", "--json", "--quiet"], { AGENTGAUGE_CLAUDE_PROJECTS: data });
+    expect(invalidLast.status).toBe(2);
+    expect(invalidLast.stderr).toContain("Invalid --last value");
+    expect(jsonQuiet.status).toBe(2);
+    expect(jsonQuiet.stderr).toContain("--json cannot be combined");
   });
 
   it("covers command run functions directly", async () => {

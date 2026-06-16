@@ -75,7 +75,7 @@
   1. **identify** — 三层 Agent 识别（header > 工具签名 > 提示词），输出 agent + confidence。
   2. **breakdown** — 7 类 token 归因（system/tools/tool_results/history/user_input/output/cache_read+write）+ per-tool 排序。
   3. **noise** — L0 噪声估算（ANSI/进度条/重复行 + 其他检测器），衡量工具输出"可压缩"比例并量化美元节省。
-- **隐私承诺**：纯本地、零网络、零数据库、零上传（除内置 pricing 主动更新）。这是相对竞品的硬差异，也是 HN/Reddit 帖子的信任基础。
+- **隐私承诺**：纯本地、零数据库、零上传；价格表默认内置，`update-pricing` 可从 LiteLLM 刷新。这是相对竞品的硬差异，也是 HN/Reddit 帖子的信任基础。
 - **与 Synrouter 的边界**：agentgauge 只**测量**不**改写**。在途压缩/缓存断点注入/工具裁剪/计量归因/飞轮全部留在闭源 Synrouter，作为 ⚡ 标记的自动修复路径。
 
 完整 PRD：`docs/product/agentgauge-prd.md`（含检测器 D1-D5 算法、报告格式规范、KPI、漏斗设计）。

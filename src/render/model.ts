@@ -1,5 +1,5 @@
 import type { CostBreakdown } from "../attribution/cost.js";
-import type { Attribution } from "../attribution/tokenize.js";
+import type { Attribution, SectionKey } from "../attribution/tokenize.js";
 import type { Finding } from "../detectors/index.js";
 import type { AgentIdentity } from "../identify/index.js";
 import type { Session } from "../parsers/types.js";
@@ -23,6 +23,8 @@ export interface ReportModel {
     cost_usd: number | null;
     potential_savings_usd: number;
     cache_hit_rate: number;
+    tokens: { input: number; output: number };
+    model?: string;
     sections: CostBreakdown["sections"];
     warnings: string[];
   };
@@ -64,6 +66,25 @@ export function buildReportModel(
   opts: { includeContent?: boolean } = {},
 ): ReportModel {
   const includeContent = opts.includeContent ?? false;
+  const inputKeys = new Set<SectionKey>([
+    "system_prompt",
+    "tool_definitions",
+    "tool_results",
+    "history",
+    "user_input",
+    "cache_read",
+    "cache_write",
+  ]);
+  const inputTokens = input.cost.sections
+    .filter((section) => inputKeys.has(section.key))
+    .reduce((sum, section) => sum + section.tokens, 0);
+  const outputTokens =
+    input.cost.sections.find((section) => section.key === "assistant_output")?.tokens ?? 0;
+  const modelCounts = new Map<string, number>();
+  for (const turn of input.attribution.turns) {
+    if (turn.model) modelCounts.set(turn.model, (modelCounts.get(turn.model) ?? 0) + 1);
+  }
+  const model = [...modelCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
   return {
     version: input.version,
     schema_version: 1,
@@ -83,6 +104,8 @@ export function buildReportModel(
         input.findings.reduce((sum, finding) => sum + finding.savings.conservative_usd, 0),
       ),
       cache_hit_rate: input.cost.cacheHitRate,
+      tokens: { input: inputTokens, output: outputTokens },
+      model,
       sections: input.cost.sections,
       warnings: input.cost.warnings,
     },

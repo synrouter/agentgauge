@@ -77,7 +77,7 @@ SPEC-AG-001 (parser)
 | FR-AG-3 | 内置定价表 | SPEC-AG-002 | `src/attribution/pricing.ts`、`src/attribution/cost.ts`、`assets/pricing.json` |
 | FR-AG-4 | 检测器 D0–D5 | SPEC-AG-003 | `src/detectors/d0-noise.ts`、`src/detectors/d1-tool-bloat.ts`、`src/detectors/d2-cache-break.ts`、`src/detectors/d3-dup-results.ts`、`src/detectors/d4-oversize.ts`、`src/detectors/d5-compactable.ts`、`src/detectors/index.ts` |
 | FR-AG-5 | 终端 / HTML / JSON 输出 | SPEC-AG-004 | `src/render/model.ts`、`src/render/terminal.ts`、`src/render/html.ts`、`src/render/json.ts` |
-| FR-AG-6 | 隐私保护（脱敏、零网络） | SPEC-AG-004（脱敏）+ SPEC-AG-005（零网络断言） | `src/render/model.ts`、`scripts/check-no-network.ts`、`src/cli/commands/update-pricing.ts` |
+| FR-AG-6 | 隐私保护（脱敏） | SPEC-AG-004（脱敏）+ SPEC-AG-005 | `src/render/model.ts`、`src/cli/commands/update-pricing.ts`、`assets/pricing.json` |
 | FR-AG-7 | 技术栈与分发 | —（已决，无需 SPEC） | `package.json`、`tsconfig.json`、`tsup.config.ts`、`vitest.config.ts`、`biome.json` |
 | FR-AG-12 | Agent 识别（三层指纹） | SPEC-AG-006 | `src/identify/profiles.ts`、`src/identify/index.ts` |
 | PRD §5 | CLI 接口契约 | SPEC-AG-005 | `src/cli.ts`、`src/cli/args.ts`、`src/cli/commands/analyze.ts`、`src/cli/commands/sessions.ts`、`src/cli/commands/doctor.ts`、`src/cli/commands/update-pricing.ts` |

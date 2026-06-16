@@ -20,6 +20,8 @@ export const reportSchema = z.object({
     cost_usd: z.number().nullable(),
     potential_savings_usd: z.number(),
     cache_hit_rate: z.number(),
+    tokens: z.object({ input: z.number(), output: z.number() }),
+    model: z.string().optional(),
     sections: z.array(z.unknown()),
     warnings: z.array(z.string()),
   }),

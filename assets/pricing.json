@@ -1,19 +1,299 @@
 {
-  "version": "2026-06-11",
+  "version": "litellm:3ceb8bff5ba6",
   "models": {
     "claude-sonnet-4-5": {
-      "aliases": ["claude-sonnet-4-5-20250929", "sonnet-4-5", "claude-3-5-sonnet"],
+      "aliases": [],
       "inputPerMillion": 3,
       "outputPerMillion": 15,
       "cacheReadMultiplier": 0.1,
       "cacheWriteMultiplier": 1.25
     },
     "claude-opus-4-1": {
-      "aliases": ["opus-4-1"],
+      "aliases": [],
       "inputPerMillion": 15,
       "outputPerMillion": 75,
       "cacheReadMultiplier": 0.1,
       "cacheWriteMultiplier": 1.25
+    },
+    "claude-opus-4-8": {
+      "aliases": [],
+      "inputPerMillion": 5,
+      "outputPerMillion": 25,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "claude-sonnet-4-6": {
+      "aliases": [],
+      "inputPerMillion": 3,
+      "outputPerMillion": 15,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "claude-fable-5": {
+      "aliases": [],
+      "inputPerMillion": 10,
+      "outputPerMillion": 50,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "claude-haiku-4-5": {
+      "aliases": [],
+      "inputPerMillion": 1,
+      "outputPerMillion": 5,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "claude-opus-4-7": {
+      "aliases": [],
+      "inputPerMillion": 5,
+      "outputPerMillion": 25,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "gemini-3-pro-preview": {
+      "aliases": [],
+      "inputPerMillion": 2,
+      "outputPerMillion": 12,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "gemini-3.1-flash-lite": {
+      "aliases": [],
+      "inputPerMillion": 0.25,
+      "outputPerMillion": 1.5,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "gemini-pro-latest": {
+      "aliases": [],
+      "inputPerMillion": 1.25,
+      "outputPerMillion": 10,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "gemini-flash-latest": {
+      "aliases": [],
+      "inputPerMillion": 0.3,
+      "outputPerMillion": 2.5,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "gemini-flash-lite-latest": {
+      "aliases": [],
+      "inputPerMillion": 0.1,
+      "outputPerMillion": 0.4,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "gpt-5.4": {
+      "aliases": [],
+      "inputPerMillion": 2.5,
+      "outputPerMillion": 15,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "gpt-5.4-pro": {
+      "aliases": [],
+      "inputPerMillion": 30,
+      "outputPerMillion": 180,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "gpt-5.4-mini": {
+      "aliases": [],
+      "inputPerMillion": 0.75,
+      "outputPerMillion": 4.5,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "gpt-5.4-nano": {
+      "aliases": [],
+      "inputPerMillion": 0.2,
+      "outputPerMillion": 1.25,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "gpt-5.1": {
+      "aliases": [],
+      "inputPerMillion": 1.25,
+      "outputPerMillion": 10,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "gpt-5.1-chat": {
+      "aliases": [],
+      "inputPerMillion": 1.25,
+      "outputPerMillion": 10,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "gpt-5.1-codex": {
+      "aliases": [],
+      "inputPerMillion": 1.25,
+      "outputPerMillion": 10,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "gpt-5": {
+      "aliases": [],
+      "inputPerMillion": 1.25,
+      "outputPerMillion": 10,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "gpt-5-mini": {
+      "aliases": [],
+      "inputPerMillion": 0.25,
+      "outputPerMillion": 2,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "gpt-5-nano": {
+      "aliases": [],
+      "inputPerMillion": 0.05,
+      "outputPerMillion": 0.4,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "deepseek-v3.2": {
+      "aliases": [],
+      "inputPerMillion": 0.28,
+      "outputPerMillion": 0.4,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "deepseek-v3.2-speciale": {
+      "aliases": [],
+      "inputPerMillion": 0.58,
+      "outputPerMillion": 1.68,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "deepseek-r1": {
+      "aliases": [],
+      "inputPerMillion": 0.55,
+      "outputPerMillion": 2.19,
+      "cacheReadMultiplier": 0.2545,
+      "cacheWriteMultiplier": 1.25
+    },
+    "deepseek-chat": {
+      "aliases": [],
+      "inputPerMillion": 0.28,
+      "outputPerMillion": 0.42,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 0
+    },
+    "deepseek-reasoner": {
+      "aliases": [],
+      "inputPerMillion": 0.28,
+      "outputPerMillion": 0.42,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "kimi-k2.6": {
+      "aliases": [],
+      "inputPerMillion": 0.95,
+      "outputPerMillion": 4,
+      "cacheReadMultiplier": 0.1684,
+      "cacheWriteMultiplier": 1.25
+    },
+    "kimi-k2.5": {
+      "aliases": [],
+      "inputPerMillion": 0.6,
+      "outputPerMillion": 3,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "kimi-k2-thinking": {
+      "aliases": [],
+      "inputPerMillion": 0.6,
+      "outputPerMillion": 2.5,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "minimax-m2.5": {
+      "aliases": [],
+      "inputPerMillion": 0.3,
+      "outputPerMillion": 1.2,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "minimax-m2.1": {
+      "aliases": [],
+      "inputPerMillion": 0.3,
+      "outputPerMillion": 1.2,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "qwen3-coder-next": {
+      "aliases": [],
+      "inputPerMillion": 0.5,
+      "outputPerMillion": 1.2,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "qwen-max": {
+      "aliases": [],
+      "inputPerMillion": 1.6,
+      "outputPerMillion": 6.4,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "qwen-plus": {
+      "aliases": [],
+      "inputPerMillion": 0.4,
+      "outputPerMillion": 1.2,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "glm-5": {
+      "aliases": [],
+      "inputPerMillion": 1,
+      "outputPerMillion": 3.2,
+      "cacheReadMultiplier": 0.2,
+      "cacheWriteMultiplier": 0
+    },
+    "glm-5-code": {
+      "aliases": [],
+      "inputPerMillion": 1.2,
+      "outputPerMillion": 5,
+      "cacheReadMultiplier": 0.25,
+      "cacheWriteMultiplier": 0
+    },
+    "glm-4.7": {
+      "aliases": [],
+      "inputPerMillion": 0.6,
+      "outputPerMillion": 2.2,
+      "cacheReadMultiplier": 0.1833,
+      "cacheWriteMultiplier": 0
+    },
+    "glm-4.7-flash": {
+      "aliases": [],
+      "inputPerMillion": 0.07,
+      "outputPerMillion": 0.4,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 1.25
+    },
+    "mimo-v2.5-pro": {
+      "aliases": [],
+      "inputPerMillion": 1,
+      "outputPerMillion": 3,
+      "cacheReadMultiplier": 0.2,
+      "cacheWriteMultiplier": 0
+    },
+    "mimo-v2.5": {
+      "aliases": [],
+      "inputPerMillion": 0.4,
+      "outputPerMillion": 2,
+      "cacheReadMultiplier": 0.2,
+      "cacheWriteMultiplier": 0
+    },
+    "mimo-v2-flash": {
+      "aliases": [],
+      "inputPerMillion": 0.1,
+      "outputPerMillion": 0.3,
+      "cacheReadMultiplier": 0.1,
+      "cacheWriteMultiplier": 0
     }
   }
 }

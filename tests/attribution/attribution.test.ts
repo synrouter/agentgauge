@@ -1,8 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
 import { computeCost, savingsFromTokens } from "../../src/attribution/cost.js";
 import {
   bundledPricingTable,
   isBillableModel,
+  loadPricingTable,
   resolveModelPrice,
 } from "../../src/attribution/pricing.js";
 import { approximateTokens, attributeSession } from "../../src/attribution/tokenize.js";
@@ -12,6 +16,13 @@ import { totalInput } from "../../src/parsers/types.js";
 import { fixture } from "../helpers.js";
 
 describe("attribution and cost", () => {
+  let tmp: string | undefined;
+
+  afterEach(() => {
+    if (tmp && existsSync(tmp)) rmSync(tmp, { recursive: true, force: true });
+    tmp = undefined;
+  });
+
   it("keeps section totals equal to usage totals", async () => {
     const session = await parseClaudeSessionFile(fixture("noisy-sidechain.jsonl"));
     const attr = attributeSession(session, identify(session));
@@ -41,9 +52,40 @@ describe("attribution and cost", () => {
 
   it("normalizes model aliases and excludes synthetic models", () => {
     const table = bundledPricingTable();
-    expect(resolveModelPrice(table, "claude-sonnet-4-5-20250929")).toBeDefined();
+    expect(resolveModelPrice(table, "claude-sonnet-4-6")).toBeDefined();
+    expect(resolveModelPrice(table, "anthropic/claude-opus-4.8")?.inputPerMillion).toBe(5);
+    expect(resolveModelPrice(table, "anthropic/claude-fable-5")?.inputPerMillion).toBe(10);
+    expect(resolveModelPrice(table, "anthropic:claude-opus-4.8")?.inputPerMillion).toBe(5);
     expect(isBillableModel("<synthetic>")).toBe(false);
     expect(approximateTokens("abcd")).toBe(1);
+  });
+
+  it("merges local pricing overrides on top of bundled pricing", () => {
+    tmp = mkdtempSync(join(tmpdir(), "agentgauge-pricing-"));
+    const path = join(tmp, "pricing.json");
+    writeFileSync(
+      path,
+      JSON.stringify(
+        {
+          version: "override",
+          models: {
+            "claude-opus-4-8": {
+              aliases: ["opus-4-8"],
+              inputPerMillion: 7,
+              outputPerMillion: 35,
+              cacheReadMultiplier: 0.1,
+              cacheWriteMultiplier: 1.25,
+            },
+          },
+        },
+        null,
+        2,
+      ),
+    );
+    const table = loadPricingTable(path);
+    expect(table.version).toBe("override");
+    expect(resolveModelPrice(table, "anthropic/claude-opus-4.8")?.inputPerMillion).toBe(7);
+    expect(resolveModelPrice(table, "claude-sonnet-4-6")?.inputPerMillion).toBe(3);
   });
 
   it("prefers exact then longest alias so version prefixes cannot shadow", () => {

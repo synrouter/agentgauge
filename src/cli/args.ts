@@ -20,5 +20,6 @@ export function numberArg(value: unknown): number | undefined {
 
 export function stringOrTrue(value: unknown): true | string | undefined {
   if (value === true || value === undefined) return true;
+  if (typeof value === "string" && value.length === 0) return true;
   return typeof value === "string" ? value : undefined;
 }

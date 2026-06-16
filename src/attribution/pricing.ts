@@ -24,12 +24,37 @@ export function bundledPricingTable(): PricingTable {
   return pricingTableSchema.parse(bundledPricing);
 }
 
+function clonePricingTable(table: PricingTable): PricingTable {
+  return {
+    version: table.version,
+    models: Object.fromEntries(
+      Object.entries(table.models).map(([model, price]) => [
+        model,
+        { ...price, aliases: [...price.aliases] },
+      ]),
+    ),
+  };
+}
+
+function mergePricingTables(base: PricingTable, overlay: PricingTable): PricingTable {
+  return {
+    version: overlay.version || base.version,
+    models: {
+      ...clonePricingTable(base).models,
+      ...clonePricingTable(overlay).models,
+    },
+  };
+}
+
 export function loadPricingTable(
   path = join(homedir(), ".agentgauge", "pricing.json"),
 ): PricingTable {
   if (existsSync(path)) {
     try {
-      return pricingTableSchema.parse(JSON.parse(readFileSync(path, "utf8")));
+      return mergePricingTables(
+        bundledPricingTable(),
+        pricingTableSchema.parse(JSON.parse(readFileSync(path, "utf8"))),
+      );
     } catch {
       return bundledPricingTable();
     }
@@ -38,20 +63,32 @@ export function loadPricingTable(
 }
 
 function normalizeModel(value: string): string {
-  return value.toLowerCase().replace(/[.@_]/g, "-");
+  const shortName = value.toLowerCase().split("/").at(-1) ?? value.toLowerCase();
+  return shortName.replace(/[.@_]/g, "-");
+}
+
+function candidateModelNames(model: string): string[] {
+  const raw = model.trim().toLowerCase();
+  const parts = raw.split(/[/:]/).filter(Boolean);
+  const candidates = [raw, ...parts, ...parts.map(normalizeModel), normalizeModel(raw)];
+  return [...new Set(candidates.filter(Boolean))];
 }
 
 /** @spec SPEC-AG-002, R4 — model alias resolution */
 export function resolveModelPrice(table: PricingTable, model?: string): ModelPrice | undefined {
   if (!model || model === "<synthetic>") return undefined;
-  const normalized = normalizeModel(model);
-  // Exact match wins; otherwise the longest matching alias does, so a future
-  // "claude-opus-4" entry can never shadow "claude-opus-4-1" (ccusage parity).
+  const candidates = candidateModelNames(model);
+  const normalizedCandidates = candidates.map(normalizeModel);
+  // Exact candidate matches win first; after that we fall back to the longest
+  // fuzzy alias, so short prefixes cannot shadow more specific versions.
   let best: { price: ModelPrice; length: number } | undefined;
   for (const [id, price] of Object.entries(table.models)) {
     for (const name of [id, ...price.aliases].map(normalizeModel)) {
-      if (normalized === name) return price;
-      if (normalized.includes(name) && name.length > (best?.length ?? 0)) {
+      if (normalizedCandidates.includes(name)) return price;
+      if (
+        normalizedCandidates.some((candidate) => candidate.includes(name)) &&
+        name.length > (best?.length ?? 0)
+      ) {
         best = { price, length: name.length };
       }
     }

@@ -10,7 +10,7 @@ describe("renderers", () => {
     const { report } = await sampleReport();
     const terminal = renderTerminal(report, { topN: 3 });
     expect(terminal).toContain("agentgauge");
-    expect(terminal).toContain("Breakdown");
+    expect(terminal).toContain("TOKEN COMPOSITION");
     const html = renderHtml(report);
     expect(Buffer.byteLength(html)).toBeLessThan(80_000);
     expect(html).toContain("synrouter.ai/connect");

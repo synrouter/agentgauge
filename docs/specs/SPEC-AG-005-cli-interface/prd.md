@@ -19,7 +19,7 @@ relates: [SPEC-AG-001, SPEC-AG-004]
 | 依赖数据 | 来源 | 可得性 | 验证结论 |
 |----------|------|--------|----------|
 | 上游模块产物 | SPEC-AG-001/002/003/004 | log | 纯编排层，无外部数据假设 |
-| 远程 pricing.json | `AGENTGAUGE_PRICING_URL` | 网络（仅 update-pricing） | PRD FR-AG-6：除此命令外全程零网络；zod 校验后落 `~/.agentgauge/pricing.json` |
+| 远程 pricing.json | `AGENTGAUGE_PRICING_URL` / LiteLLM 默认源 | 网络（仅 update-pricing） | 默认拉取 LiteLLM 的模型价格快照；zod 校验后落 `~/.agentgauge/pricing.json` |
 
 ## 需求
 
@@ -74,7 +74,7 @@ relates: [SPEC-AG-001, SPEC-AG-004]
 
 - 漏斗第一关：干净机器 `npx agentgauge` → 10 秒内出报告或 doctor 级修复建议，零 crash
 - cli 模块覆盖率 ≥ 60%（PRD 质量门）
-- 零网络断言：除 update-pricing 外任何代码路径无出站请求（静态检查 import 白名单）
+- `update-pricing` 默认从 LiteLLM 拉取价格快照；失败时才由 `--url` 或 `AGENTGAUGE_PRICING_URL` 覆盖
 
 ## 非目标
 

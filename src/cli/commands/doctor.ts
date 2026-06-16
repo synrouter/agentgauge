@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { defineCommand } from "citty";
-import { bundledPricingTable } from "../../attribution/pricing.js";
+import { loadPricingTable } from "../../attribution/pricing.js";
 import { EXIT } from "../../lib/exit.js";
 import { discoverClaudeSessionFiles } from "../../lib/glob.js";
 
@@ -11,7 +11,7 @@ export const doctorCommand = defineCommand({
   async run() {
     const root = process.env.AGENTGAUGE_CLAUDE_PROJECTS ?? join(homedir(), ".claude", "projects");
     const files = await discoverClaudeSessionFiles({ all: true });
-    const pricing = bundledPricingTable();
+    const pricing = loadPricingTable();
     process.stdout.write(
       `Node: ${process.versions.node} (${Number(process.versions.node.split(".")[0]) >= 18 ? "ok" : "unsupported"})\n`,
     );

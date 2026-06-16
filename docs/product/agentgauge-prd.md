@@ -310,7 +310,7 @@ $ npx agentgauge analyze --last
 
 ### FR-AG-6: 隐私保护
 
-> 对应 SPEC: [SPEC-AG-004](../specs/SPEC-AG-004-report-rendering/prd.md)（脱敏）+ [SPEC-AG-005](../specs/SPEC-AG-005-cli-interface/prd.md)（零网络断言）
+> 对应 SPEC: [SPEC-AG-004](../specs/SPEC-AG-004-report-rendering/prd.md)（脱敏）+ [SPEC-AG-005](../specs/SPEC-AG-005-cli-interface/prd.md)（价格刷新）
 
 **优先级**: P0
 **状态**: proposed

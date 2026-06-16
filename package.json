@@ -1,7 +1,7 @@
 {
   "name": "agentgauge",
-  "version": "0.1.0",
-  "description": "Open-source CLI that breaks down where your AI coding agent burns tokens — per-section, per-tool, with cost & compressible-noise estimates. Reads local Claude Code / Codex session logs, runs fully offline.",
+  "version": "0.1.1",
+  "description": "Open-source CLI that breaks down where your AI coding agent burns tokens — per-section, per-tool, with cost & compressible-noise estimates. Reads local Claude Code / Codex session logs and refreshes pricing from LiteLLM.",
   "type": "module",
   "bin": {
     "agentgauge": "./cli.js"
@@ -11,7 +11,6 @@
     "build": "tsup",
     "test": "vitest run --coverage",
     "test:unit": "vitest run",
-    "check:no-network": "tsx scripts/check-no-network.ts",
     "prepack": "pnpm build",
     "typecheck": "tsc --noEmit"
   },

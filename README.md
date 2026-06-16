@@ -155,7 +155,7 @@ Findings marked with ⚡ point to optimizations that require request-layer chang
 ## Privacy
 
 - **Zero upload**: no telemetry, no database, no cloud API calls during analysis.
-- **Zero network**: the only network-capable command is `update-pricing`.
+- **Pricing refresh**: `update-pricing` pulls the latest LiteLLM pricing snapshot by default and writes it to your local cache.
 - **Redaction**: paths are reduced to basenames and tool results are truncated in reports unless you pass `--include-content`.
 - **Override data root**: set `AGENTGAUGE_CLAUDE_PROJECTS=/path/to/projects` (comma-separated for multiple roots).
 

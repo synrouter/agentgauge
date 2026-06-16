@@ -40,10 +40,11 @@ export async function discoverClaudeSessionFiles(
         !sessionId.startsWith(selector.session)
       )
         continue;
-      if (selector.since && entry.stats.mtime < selector.since) continue;
       files.push({ path, projectName, sessionId, mtimeMs: entry.stats.mtimeMs });
     }
   }
   files.sort((a, b) => b.mtimeMs - a.mtimeMs);
-  return selector.all || typeof selector.last === "string" ? files : files.slice(0, 1);
+  return selector.all || typeof selector.last === "string" || selector.since || selector.until
+    ? files
+    : files.slice(0, 1);
 }

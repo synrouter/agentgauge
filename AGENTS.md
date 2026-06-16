@@ -75,7 +75,7 @@
   1. **identify** — 三层 Agent 识别（header > 工具签名 > 提示词），输出 agent + confidence。
   2. **breakdown** — 7 类 token 归因（system/tools/tool_results/history/user_input/output/cache_read+write）+ per-tool 排序。
   3. **noise** — L0 噪声估算（ANSI/进度条/重复行 + 其他检测器），衡量工具输出"可压缩"比例并量化美元节省。
-- **隐私承诺**：纯本地、零网络、零数据库、零上传（除内置 pricing 主动更新）。这是相对竞品的硬差异，也是 HN/Reddit 帖子的信任基础。
+- **隐私承诺**：纯本地、零数据库、零上传；价格表默认内置，`update-pricing` 可从 LiteLLM 刷新。这是相对竞品的硬差异，也是 HN/Reddit 帖子的信任基础。
 - **与 Synrouter 的边界**：agentgauge 只**测量**不**改写**。在途压缩/缓存断点注入/工具裁剪/计量归因/飞轮全部留在闭源 Synrouter，作为 ⚡ 标记的自动修复路径。
 
 完整 PRD：`docs/product/agentgauge-prd.md`（含检测器 D1-D5 算法、报告格式规范、KPI、漏斗设计）。
@@ -263,7 +263,7 @@ agentgauge 的 L0 噪声估算思路源自 [RTK (rtk-ai/rtk, MIT)](https://githu
 
 ### 红线（违反 = 返工）
 
-- **零网络**：除 `update-pricing` 模块外不得 import `node:http(s)`/`net`/`undici` 或调用 `fetch`。SPEC-AG-005 的 CI 静态断言**尽早建**，让它守住你自己
+- **价格刷新**：`update-pricing` 默认从 LiteLLM 拉取价格表；其他路径不应依赖网络。
 - **永不 crash**：parsers / attribution / detectors 对畸形输入降级返回；损坏 JSONL 行 = 跳过 + 计数
 - **fixture 隐私**：制作 fixture 时可读本机 `~/.claude/projects/**/*.jsonl` 验证字段结构，但**落盘进仓库的 fixture 必须合成或彻底脱敏**（路径、项目名、对话内容全换占位值；usage 数字保持真实形状）。SPEC-AG-001 数据表中标"本机 fixture 待复核"的两项（重复计费记录、AgentProgress 包装），制作 fixture 时顺手验证并把结论更新回该表
 - **RTK 致谢**：`src/detectors/d0-noise.ts` 文件头必须含 `noise detection adapted from RTK (https://github.com/rtk-ai/rtk, MIT)`
