@@ -27,12 +27,14 @@ function displayName(key: string): string {
   return key.replace(/_/g, " ");
 }
 
-const COMPOSITION_ORDER: SectionKey[] = [
-  "tool_results",
-  "tool_definitions",
-  "history",
-  "system_prompt",
-  "user_input",
+const COMPOSITION_GROUPS: Array<{
+  title: string;
+  keys: SectionKey[];
+}> = [
+  { title: "Stable prefix", keys: ["system_prompt", "tool_definitions"] },
+  { title: "Conversation context", keys: ["tool_results", "history"] },
+  { title: "Current turn", keys: ["user_input"] },
+  { title: "Cache", keys: ["cache_read", "cache_write"] },
 ];
 
 /** @spec SPEC-AG-004, R1 — terminal report renderer */
@@ -84,28 +86,33 @@ export function renderTerminal(model: ReportModel, opts: TerminalOptions = {}): 
     model.aggregate.sections.map((section) => [section.key, section]),
   );
 
-  const compositionRows = COMPOSITION_ORDER.map((key) => {
-    const section = sectionMap.get(key);
-    if (!section) return undefined;
+  function renderRow(section: (typeof model.aggregate.sections)[number]): string {
     const pct = totalInput > 0 ? section.tokens / totalInput : 0;
     const pctStr = `${section.estimated ? "~" : ""}${(pct * 100).toFixed(0)}%`;
-    const label = displayName(key).padEnd(17);
-    return `  ${label}${bar(pct)}  ${pctStr.padStart(4)}  ${formatTokens(section.tokens).padStart(6)}  ${money(section.costUSD)}`;
-  }).filter((line): line is string => line !== undefined);
+    const label = displayName(section.key).padEnd(17);
+    const value = `${formatTokens(section.tokens).padStart(6)}  ${money(section.costUSD)}`;
+    if (
+      section.key === "assistant_output" ||
+      section.key === "cache_read" ||
+      section.key === "cache_write"
+    ) {
+      return `  ${label}${" ".repeat(20 + 2 + 4 + 2)}${value}`;
+    }
+    return `  ${label}${bar(pct)}  ${pctStr.padStart(4)}  ${value}`;
+  }
+
+  const compositionBlocks = COMPOSITION_GROUPS.map((group) => {
+    const rows = group.keys
+      .map((key) => sectionMap.get(key))
+      .filter(
+        (section): section is (typeof model.aggregate.sections)[number] => section !== undefined,
+      );
+    if (rows.length === 0) return undefined;
+    return [c.bold(group.title), ...rows.map(renderRow)];
+  }).filter((block): block is string[] => block !== undefined);
 
   const outputSection = sectionMap.get("assistant_output");
-  const outputRow = outputSection
-    ? `  ${displayName("assistant_output").padEnd(17)}${" ".repeat(20 + 2 + 4 + 2)}${formatTokens(outputSection.tokens).padStart(6)}  ${money(outputSection.costUSD)}`
-    : undefined;
-
-  const cacheRows = (["cache_read", "cache_write"] as SectionKey[])
-    .map((key) => {
-      const section = sectionMap.get(key);
-      if (!section) return undefined;
-      const label = displayName(key).padEnd(17);
-      return `  ${label}${" ".repeat(20 + 2 + 4 + 2)}${formatTokens(section.tokens).padStart(6)}  ${money(section.costUSD)}`;
-    })
-    .filter((line): line is string => line !== undefined);
+  const outputBlock = outputSection ? [c.bold("Output"), renderRow(outputSection)] : undefined;
 
   const findings = model.findings.slice(0, opts.topN ?? 5).map((finding) => {
     const sevColor =
@@ -121,9 +128,8 @@ export function renderTerminal(model: ReportModel, opts: TerminalOptions = {}): 
     "",
     c.bold("TOKEN COMPOSITION (input)"),
     c.dim("  ~ = estimated residual; system + tool definitions are billed on every request"),
-    ...compositionRows,
-    ...(outputRow ? ["", c.bold("OUTPUT"), outputRow] : []),
-    ...(cacheRows.length > 0 ? ["", c.bold("CACHE"), ...cacheRows] : []),
+    ...compositionBlocks.flatMap((block) => ["", ...block]),
+    ...(outputBlock ? ["", ...outputBlock] : []),
     "",
     c.bold(`FINDINGS (${model.findings.length})                                  est. savings`),
     ...(findings.length > 0 ? findings : ["  No findings above threshold."]),
