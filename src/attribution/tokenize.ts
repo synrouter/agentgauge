@@ -1,4 +1,5 @@
 import type { AgentIdentity } from "../identify/index.js";
+import { computeSystemRatio, getProfile } from "../identify/profiles.js";
 import type { Session, Turn, Usage } from "../parsers/types.js";
 import { emptyUsage, sumUsage, totalInput } from "../parsers/types.js";
 
@@ -154,6 +155,7 @@ export function attributeSession(session: Session, agent: AgentIdentity): Attrib
   const usage = sumUsage(
     session.turns.flatMap((turn) => turn.messages.map((message) => message.usage)),
   );
+  const systemRatio = computeSystemRatio(getProfile(agent.agent));
   const residuals: number[] = [];
   let previousUsageIndex = -1;
   const turnInputs = session.turns.flatMap((turn, turnIndex) => {
@@ -168,7 +170,7 @@ export function attributeSession(session: Session, agent: AgentIdentity): Attrib
   const stablePrefix = median(residuals.filter((value) => value > 0));
   const turns: TurnAttribution[] = turnInputs.map(({ turn, turnUsage, scaled }) => {
     const prefix = stablePrefix > 0 ? Math.min(stablePrefix, scaled.residual) : scaled.residual;
-    const system = Math.round(prefix * 0.35);
+    const system = Math.round(prefix * systemRatio);
     const tools = Math.max(0, scaled.residual - system);
     return {
       turnId: turn.id,

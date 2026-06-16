@@ -120,6 +120,7 @@ export function renderTerminal(model: ReportModel, opts: TerminalOptions = {}): 
     ...header,
     "",
     c.bold("TOKEN COMPOSITION (input)"),
+    c.dim("  ~ = estimated residual; system + tool definitions are billed on every request"),
     ...compositionRows,
     ...(outputRow ? ["", c.bold("OUTPUT"), outputRow] : []),
     ...(cacheRows.length > 0 ? ["", c.bold("CACHE"), ...cacheRows] : []),
