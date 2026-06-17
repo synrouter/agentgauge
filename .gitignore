@@ -221,6 +221,18 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+# Claude Code (local project settings)
+.claude/
+
+# CodeGraph (local index)
+.codegraph/
+
+# oh-my-claudecode (local state, sessions, memory)
+.omc/
+
+# MCP server config (local)
+.mcp.json
+
 # macOS
 .DS_Store
 ._*

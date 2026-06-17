@@ -86,6 +86,42 @@ export function renderTerminal(model: ReportModel, opts: TerminalOptions = {}): 
     model.aggregate.sections.map((section) => [section.key, section]),
   );
 
+  const cacheReadSection = sectionMap.get("cache_read");
+  const otherInputTokens = model.aggregate.sections
+    .filter(
+      (section) =>
+        section.key !== "cache_read" &&
+        section.key !== "cache_write" &&
+        section.key !== "assistant_output",
+    )
+    .reduce((sum, section) => sum + section.tokens, 0);
+  const otherInputCost = model.aggregate.sections
+    .filter(
+      (section) =>
+        section.key !== "cache_read" &&
+        section.key !== "cache_write" &&
+        section.key !== "assistant_output",
+    )
+    .reduce((sum, section) => sum + (section.costUSD ?? 0), 0);
+  const cacheReadTokens = cacheReadSection?.tokens ?? 0;
+  const cacheReadCost = cacheReadSection?.costUSD ?? 0;
+  // Effective total matches cache_hit_rate semantics (excludes output + cache_write)
+  const effectiveInput = otherInputTokens + cacheReadTokens;
+  const otherPct = effectiveInput > 0 ? Math.round((otherInputTokens / effectiveInput) * 100) : 0;
+  const cachePct = effectiveInput > 0 ? Math.round((cacheReadTokens / effectiveInput) * 100) : 0;
+
+  const cacheHitStr = `CACHE HIT ${(model.aggregate.cache_hit_rate * 100).toFixed(1)}%`;
+  const regularRow = `  Regular input ${formatTokens(otherInputTokens).padStart(6)} ${money(otherInputCost).padStart(8)}${String(otherPct).padStart(4)}%`;
+  const cachedRow = `  Cached input  ${formatTokens(cacheReadTokens).padStart(6)} ${money(cacheReadCost).padStart(8)}${String(cachePct).padStart(4)}%`;
+  const inputBreakdown = [
+    c.bold("INPUT BREAKDOWN"),
+    c.dim("  regular = billed at full rate · cached = billed at 0.1× (cache read)"),
+    "",
+    `${regularRow.padEnd(52)}${cacheHitStr}`,
+    cachedRow,
+    "",
+  ];
+
   function renderRow(section: (typeof model.aggregate.sections)[number]): string {
     const pct = totalInput > 0 ? section.tokens / totalInput : 0;
     const pctStr = `${section.estimated ? "~" : ""}${(pct * 100).toFixed(0)}%`;
@@ -126,6 +162,7 @@ export function renderTerminal(model: ReportModel, opts: TerminalOptions = {}): 
   const lines = [
     ...header,
     "",
+    ...inputBreakdown,
     c.bold("TOKEN COMPOSITION (input)"),
     c.dim("  ~ = estimated residual; system + tool definitions are billed on every request"),
     ...compositionBlocks.flatMap((block) => ["", ...block]),
