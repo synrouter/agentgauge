@@ -10,7 +10,7 @@ describe("renderers", () => {
     const { report } = await sampleReport();
     const terminal = renderTerminal(report, { topN: 3 });
     expect(terminal).toContain("agentgauge");
-    expect(terminal).toContain("TOKEN COMPOSITION");
+    expect(terminal).toContain("TOKEN BREAKDOWN");
     const html = renderHtml(report);
     expect(Buffer.byteLength(html)).toBeLessThan(80_000);
     expect(html).toContain("synrouter.ai/connect");
@@ -23,6 +23,24 @@ describe("renderers", () => {
     expect(renderTerminal(report, { quiet: true })).not.toContain("Breakdown");
     expect(redactPath("/Users/example/secret/project/file.ts")).toBe("file.ts");
     expect(redactContent("x".repeat(200))).toContain("[200 chars]");
+  });
+
+  it("lists every model used in terminal reports", async () => {
+    const { report } = await sampleReport();
+    const terminal = renderTerminal({
+      ...report,
+      aggregate: {
+        ...report.aggregate,
+        model: "deepseek-v4-pro",
+        models: [
+          { id: "deepseek-v4-pro", turns: 430 },
+          { id: "qwen/qwen3.7-max", turns: 333 },
+        ],
+      },
+    });
+    expect(terminal).toContain("Models");
+    expect(terminal).toContain("deepseek-v4-pro (430 turns)");
+    expect(terminal).toContain("qwen/qwen3.7-max (333 turns)");
   });
 
   it("redacts absolute paths on every platform in built reports", async () => {

@@ -18,6 +18,10 @@ export interface ReportModel {
   version: string;
   schema_version: 1;
   generated_at: string;
+  period: {
+    start: string | null;
+    end: string | null;
+  };
   sessions: ReportSession[];
   aggregate: {
     cost_usd: number | null;
@@ -25,6 +29,7 @@ export interface ReportModel {
     cache_hit_rate: number;
     tokens: { input: number; output: number };
     model?: string;
+    models: Array<{ id: string; turns: number }>;
     sections: CostBreakdown["sections"];
     warnings: string[];
   };
@@ -33,6 +38,20 @@ export interface ReportModel {
 
 function round(value: number): number {
   return Math.round(value * 100) / 100;
+}
+
+function reportPeriod(sessions: Session[]): ReportModel["period"] {
+  const timestamps = sessions
+    .flatMap((session) => session.turns.map((turn) => turn.timestamp))
+    .filter((timestamp): timestamp is string => {
+      if (!timestamp) return false;
+      return !Number.isNaN(new Date(timestamp).getTime());
+    })
+    .sort();
+  return {
+    start: timestamps[0] ?? null,
+    end: timestamps.at(-1) ?? null,
+  };
 }
 
 export function redactPath(path: string): string {
@@ -84,11 +103,15 @@ export function buildReportModel(
   for (const turn of input.attribution.turns) {
     if (turn.model) modelCounts.set(turn.model, (modelCounts.get(turn.model) ?? 0) + 1);
   }
-  const model = [...modelCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+  const models = [...modelCounts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([id, turns]) => ({ id, turns }));
+  const model = models[0]?.id;
   return {
     version: input.version,
     schema_version: 1,
     generated_at: new Date().toISOString(),
+    period: reportPeriod(input.sessions),
     sessions: input.sessions.map((session) => ({
       id: session.id,
       project: redactPath(session.projectName),
@@ -106,6 +129,7 @@ export function buildReportModel(
       cache_hit_rate: input.cost.cacheHitRate,
       tokens: { input: inputTokens, output: outputTokens },
       model,
+      models,
       sections: input.cost.sections,
       warnings: input.cost.warnings,
     },

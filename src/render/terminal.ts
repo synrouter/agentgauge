@@ -18,24 +18,52 @@ function formatTokens(value: number): string {
   return `${value}`;
 }
 
-function bar(pct: number, width = 20): string {
-  const filled = Math.max(0, Math.min(width, Math.round(pct * width)));
-  return `${"█".repeat(filled)}${"░".repeat(width - filled)}`;
+function modelRows(models: ReportModel["aggregate"]["models"], fallback?: string): string[][] {
+  const labels =
+    models.length > 0
+      ? models.map((model) => `${model.id} (${model.turns} turns)`)
+      : [fallback ?? "unknown"];
+  return labels.map((label, index) => [index === 0 ? "Models" : "", label]);
 }
 
 function displayName(key: string): string {
   return key.replace(/_/g, " ");
 }
 
-const COMPOSITION_GROUPS: Array<{
-  title: string;
-  keys: SectionKey[];
-}> = [
-  { title: "Stable prefix", keys: ["system_prompt", "tool_definitions"] },
-  { title: "Conversation context", keys: ["tool_results", "history"] },
-  { title: "Current turn", keys: ["user_input"] },
-  { title: "Cache", keys: ["cache_read", "cache_write"] },
+const SECTION_ORDER: SectionKey[] = [
+  "system_prompt",
+  "tool_definitions",
+  "tool_results",
+  "history",
+  "user_input",
+  "cache_read",
+  "cache_write",
+  "assistant_output",
 ];
+
+function percent(part: number, total: number, estimated = false): string {
+  const value = total > 0 ? (part / total) * 100 : 0;
+  return `${estimated ? "~" : ""}${value.toFixed(1)}%`;
+}
+
+function formatPeriod(start: string | null, end: string | null): string {
+  const startDay = start?.slice(0, 10) ?? null;
+  const endDay = end?.slice(0, 10) ?? null;
+  if (!startDay && !endDay) return "unknown";
+  if (startDay === endDay || !endDay) return startDay ?? "unknown";
+  if (!startDay) return endDay;
+  return `${startDay} -> ${endDay}`;
+}
+
+function renderTable(headers: string[], rows: string[][]): string[] {
+  const widths = headers.map((header, index) =>
+    Math.max(header.length, ...rows.map((row) => row[index]?.length ?? 0)),
+  );
+  const formatRow = (row: string[]) =>
+    `| ${row.map((cell, index) => cell.padEnd(widths[index] ?? 0)).join(" | ")} |`;
+  const divider = `| ${widths.map((width) => "-".repeat(width)).join(" | ")} |`;
+  return [formatRow(headers), divider, ...rows.map(formatRow)];
+}
 
 /** @spec SPEC-AG-004, R1 — terminal report renderer */
 export function renderTerminal(model: ReportModel, opts: TerminalOptions = {}): string {
@@ -56,21 +84,34 @@ export function renderTerminal(model: ReportModel, opts: TerminalOptions = {}): 
   const savingsPct = cost > 0 ? Math.round((savings / cost) * 100) : 0;
   const totalInput = model.aggregate.tokens.input;
   const totalOutput = model.aggregate.tokens.output;
+  const totalTokens = totalInput + totalOutput;
 
   const sessions = model.sessions;
   const totalTurns = sessions.reduce((sum, session) => sum + session.turns, 0);
   const projectLabel =
     sessions.length > 1 ? `${sessions.length} sessions` : (sessions[0]?.project ?? "unknown");
-  const sessionLine = `Session   ${model.sessions[0]?.agent ?? "unknown"} · ${projectLabel} · ${totalTurns} turns`;
-  const modelLine = model.aggregate.model ? `Model     ${model.aggregate.model}` : undefined;
+  const agentLabel =
+    sessions.length === 1
+      ? (sessions[0]?.agent ?? "unknown")
+      : [...new Set(sessions.map((session) => session.agent))].join(", ");
+  const periodLabel = formatPeriod(model.period.start, model.period.end);
 
   const header = [
     c.bold(`agentgauge ${model.version} — session report`),
-    sessionLine,
-    ...(modelLine ? [modelLine] : []),
     "",
-    `COST          ${money(model.aggregate.cost_usd).padEnd(10)} POTENTIAL SAVINGS    ${money(savings)} (${savingsPct}%)`,
-    `TOKENS        ${formatTokens(totalInput).padEnd(5)} in / ${formatTokens(totalOutput).padEnd(5)} out                CACHE HIT ${(model.aggregate.cache_hit_rate * 100).toFixed(1)}%`,
+    ...renderTable(
+      ["Metric", "Value"],
+      [
+        ["Time range", periodLabel],
+        ["Agent", agentLabel],
+        ...modelRows(model.aggregate.models, model.aggregate.model),
+        ["Scope", `${projectLabel}, ${totalTurns} turns`],
+        ["Tokens", `${formatTokens(totalInput)} in / ${formatTokens(totalOutput)} out`],
+        ["Cost", money(model.aggregate.cost_usd)],
+      ],
+    ),
+    "",
+    `Potential savings ${money(savings)} (${savingsPct}%) · Cache hit ${(model.aggregate.cache_hit_rate * 100).toFixed(1)}%`,
   ];
 
   if (opts.quiet) {
@@ -86,69 +127,17 @@ export function renderTerminal(model: ReportModel, opts: TerminalOptions = {}): 
     model.aggregate.sections.map((section) => [section.key, section]),
   );
 
-  const cacheReadSection = sectionMap.get("cache_read");
-  const otherInputTokens = model.aggregate.sections
+  const tokenRows = SECTION_ORDER.map((key) => sectionMap.get(key))
     .filter(
-      (section) =>
-        section.key !== "cache_read" &&
-        section.key !== "cache_write" &&
-        section.key !== "assistant_output",
+      (section): section is (typeof model.aggregate.sections)[number] => section !== undefined,
     )
-    .reduce((sum, section) => sum + section.tokens, 0);
-  const otherInputCost = model.aggregate.sections
-    .filter(
-      (section) =>
-        section.key !== "cache_read" &&
-        section.key !== "cache_write" &&
-        section.key !== "assistant_output",
-    )
-    .reduce((sum, section) => sum + (section.costUSD ?? 0), 0);
-  const cacheReadTokens = cacheReadSection?.tokens ?? 0;
-  const cacheReadCost = cacheReadSection?.costUSD ?? 0;
-  // Effective total matches cache_hit_rate semantics (excludes output + cache_write)
-  const effectiveInput = otherInputTokens + cacheReadTokens;
-  const otherPct = effectiveInput > 0 ? Math.round((otherInputTokens / effectiveInput) * 100) : 0;
-  const cachePct = effectiveInput > 0 ? Math.round((cacheReadTokens / effectiveInput) * 100) : 0;
-
-  const cacheHitStr = `CACHE HIT ${(model.aggregate.cache_hit_rate * 100).toFixed(1)}%`;
-  const regularRow = `  Regular input ${formatTokens(otherInputTokens).padStart(6)} ${money(otherInputCost).padStart(8)}${String(otherPct).padStart(4)}%`;
-  const cachedRow = `  Cached input  ${formatTokens(cacheReadTokens).padStart(6)} ${money(cacheReadCost).padStart(8)}${String(cachePct).padStart(4)}%`;
-  const inputBreakdown = [
-    c.bold("INPUT BREAKDOWN"),
-    c.dim("  regular = billed at full rate · cached = billed at 0.1× (cache read)"),
-    "",
-    `${regularRow.padEnd(52)}${cacheHitStr}`,
-    cachedRow,
-    "",
-  ];
-
-  function renderRow(section: (typeof model.aggregate.sections)[number]): string {
-    const pct = totalInput > 0 ? section.tokens / totalInput : 0;
-    const pctStr = `${section.estimated ? "~" : ""}${(pct * 100).toFixed(0)}%`;
-    const label = displayName(section.key).padEnd(17);
-    const value = `${formatTokens(section.tokens).padStart(6)}  ${money(section.costUSD)}`;
-    if (
-      section.key === "assistant_output" ||
-      section.key === "cache_read" ||
-      section.key === "cache_write"
-    ) {
-      return `  ${label}${" ".repeat(20 + 2 + 4 + 2)}${value}`;
-    }
-    return `  ${label}${bar(pct)}  ${pctStr.padStart(4)}  ${value}`;
-  }
-
-  const compositionBlocks = COMPOSITION_GROUPS.map((group) => {
-    const rows = group.keys
-      .map((key) => sectionMap.get(key))
-      .filter(
-        (section): section is (typeof model.aggregate.sections)[number] => section !== undefined,
-      );
-    if (rows.length === 0) return undefined;
-    return [c.bold(group.title), ...rows.map(renderRow)];
-  }).filter((block): block is string[] => block !== undefined);
-
-  const outputSection = sectionMap.get("assistant_output");
-  const outputBlock = outputSection ? [c.bold("Output"), renderRow(outputSection)] : undefined;
+    .map((section) => [
+      displayName(section.key),
+      section.key === "assistant_output" ? "output" : "input",
+      `${section.estimated ? "~" : ""}${formatTokens(section.tokens)}`,
+      percent(section.tokens, totalTokens, section.estimated),
+      money(section.costUSD),
+    ]);
 
   const findings = model.findings.slice(0, opts.topN ?? 5).map((finding) => {
     const sevColor =
@@ -161,22 +150,17 @@ export function renderTerminal(model: ReportModel, opts: TerminalOptions = {}): 
 
   const lines = [
     ...header,
+    ...(sidechainLine ? [sidechainLine] : []),
     "",
-    ...inputBreakdown,
-    c.bold("TOKEN COMPOSITION (input)"),
-    c.dim("  ~ = estimated residual; system + tool definitions are billed on every request"),
-    ...compositionBlocks.flatMap((block) => ["", ...block]),
-    ...(outputBlock ? ["", ...outputBlock] : []),
+    c.bold("TOKEN BREAKDOWN"),
+    c.dim("~ = estimated residual; share is of total reported tokens"),
+    ...renderTable(["Section", "Kind", "Tokens", "Share", "Cost"], tokenRows),
     "",
     c.bold(`FINDINGS (${model.findings.length})                                  est. savings`),
     ...(findings.length > 0 ? findings : ["  No findings above threshold."]),
     "",
     "⚡ = auto-fixable with synrouter → synrouter.ai/connect",
   ];
-
-  if (sidechainLine) {
-    lines.splice(4, 0, sidechainLine);
-  }
 
   return `${lines.join("\n")}\n`;
 }

@@ -4,39 +4,31 @@ exports[`renderers > locks terminal and html output with golden snapshots > html
 
 exports[`renderers > locks terminal and html output with golden snapshots > terminal 1`] = `
 "agentgauge 0.0.0 — session report
-Session   claude-code · examples · 5 turns
-Model     claude-sonnet-4-5
 
+| Metric     | Value                       |
+| ---------- | --------------------------- |
+| Time range | 2026-06-10                  |
+| Agent      | claude-code                 |
+| Models     | claude-sonnet-4-5 (3 turns) |
+| Scope      | examples, 5 turns           |
+| Tokens     | 8K in / 330 out             |
+| Cost       | $0.03                       |
+
+Potential savings $0.00 (0%) · Cache hit 12.4%
 Sub-agents  1 turns · 1K tok (14% of input)
-COST          $0.03      POTENTIAL SAVINGS    $0.00 (0%)
-TOKENS        8K    in / 330   out                CACHE HIT 12.4%
 
-INPUT BREAKDOWN
-  regular = billed at full rate · cached = billed at 0.1× (cache read)
-
-  Regular input     6K    $0.02  86%                CACHE HIT 12.4%
-  Cached input     960    $0.00  14%
-
-TOKEN COMPOSITION (input)
-  ~ = estimated residual; system + tool definitions are billed on every request
-
-Stable prefix
-  system prompt    ████████░░░░░░░░░░░░  ~42%      3K  $0.01
-  tool definitions ██████░░░░░░░░░░░░░░  ~30%      2K  $0.01
-
-Conversation context
-  tool results     ░░░░░░░░░░░░░░░░░░░░    0%      33  $0.00
-  history          ░░░░░░░░░░░░░░░░░░░░    1%      58  $0.00
-
-Current turn
-  user input       ░░░░░░░░░░░░░░░░░░░░    0%       7  $0.00
-
-Cache
-  cache read                                      960  $0.00
-  cache write                                      1K  $0.00
-
-Output
-  assistant output                                330  $0.00
+TOKEN BREAKDOWN
+~ = estimated residual; share is of total reported tokens
+| Section          | Kind   | Tokens | Share  | Cost  |
+| ---------------- | ------ | ------ | ------ | ----- |
+| system prompt    | input  | ~3K    | ~40.5% | $0.01 |
+| tool definitions | input  | ~2K    | ~29.1% | $0.01 |
+| tool results     | input  | 33     | 0.4%   | $0.00 |
+| history          | input  | 58     | 0.7%   | $0.00 |
+| user input       | input  | 7      | 0.1%   | $0.00 |
+| cache read       | input  | 960    | 11.9%  | $0.00 |
+| cache write      | input  | 1K     | 13.2%  | $0.00 |
+| assistant output | output | 330    | 4.1%   | $0.00 |
 
 FINDINGS (2)                                  est. savings
 ● MED  D2  Cache prefix appears to break between turns    $0.00~ ⚡

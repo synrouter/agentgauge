@@ -5,6 +5,10 @@ export const reportSchema = z.object({
   version: z.string(),
   schema_version: z.literal(1),
   generated_at: z.string(),
+  period: z.object({
+    start: z.string().nullable(),
+    end: z.string().nullable(),
+  }),
   sessions: z.array(
     z.object({
       id: z.string(),
@@ -22,6 +26,7 @@ export const reportSchema = z.object({
     cache_hit_rate: z.number(),
     tokens: z.object({ input: z.number(), output: z.number() }),
     model: z.string().optional(),
+    models: z.array(z.object({ id: z.string(), turns: z.number() })),
     sections: z.array(z.unknown()),
     warnings: z.array(z.string()),
   }),
