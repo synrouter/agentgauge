@@ -1,12 +1,18 @@
 {
   "name": "agentgauge",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Open-source CLI that breaks down where your AI coding agent burns tokens — per-section, per-tool, with cost & compressible-noise estimates. Reads local Claude Code / Codex session logs and refreshes pricing from LiteLLM.",
   "type": "module",
   "bin": {
     "agentgauge": "./cli.js"
   },
-  "files": ["dist", "assets", "cli.js", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "assets",
+    "cli.js",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsup",
     "test": "vitest run --coverage",
