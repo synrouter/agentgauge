@@ -2,7 +2,7 @@
 id: DESIGN-AG-004
 spec: SPEC-AG-004
 title: "报告渲染设计"
-status: draft
+status: implemented
 created: 2026-06-11
 updated: 2026-06-11
 ---

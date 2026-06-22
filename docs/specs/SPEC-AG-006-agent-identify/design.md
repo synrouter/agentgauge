@@ -2,7 +2,7 @@
 id: DESIGN-AG-006
 spec: SPEC-AG-006
 title: "Agent 三层指纹识别设计"
-status: draft
+status: implemented
 created: 2026-06-11
 updated: 2026-06-11
 ---

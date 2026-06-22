@@ -1,7 +1,7 @@
 ---
 id: SPEC-AG-006
 title: "Agent 识别（三层指纹）"
-status: draft
+status: implemented
 created: 2026-06-11
 updated: 2026-06-11
 tags: [identify, v0.1, P0]

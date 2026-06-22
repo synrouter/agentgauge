@@ -1,5 +1,6 @@
 import pc from "picocolors";
 import type { SectionKey } from "../attribution/tokenize.js";
+import { sparkline } from "../insights/index.js";
 import type { ReportModel } from "./model.js";
 
 export interface TerminalOptions {
@@ -53,6 +54,32 @@ function formatPeriod(start: string | null, end: string | null): string {
   if (startDay === endDay || !endDay) return startDay ?? "unknown";
   if (!startDay) return endDay;
   return `${startDay} -> ${endDay}`;
+}
+
+function behaviorLines(model: ReportModel): string[] {
+  const behavior = model.behavior;
+  if (!behavior) return [];
+  const lines: string[] = [];
+  const inventory = behavior.toolInventory;
+  if (inventory) {
+    lines.push(`Tools used ${inventory.used}/${inventory.loaded}${inventory.estimated ? "~" : ""}`);
+  }
+  const turnInputs = behavior.turnEfficiency.map((turn) => turn.inputTokens);
+  const curve = sparkline(turnInputs, 64);
+  if (curve) {
+    const maxTurn = behavior.turnEfficiency.reduce(
+      (max, turn) => (turn.inputTokens > max.inputTokens ? turn : max),
+      behavior.turnEfficiency[0]!,
+    );
+    lines.push(`Turn input ${curve}  peak turn ${maxTurn.turnIndex}`);
+  }
+  const topTool = behavior.toolBehavior.find((tool) => tool.calls > 0);
+  if (topTool) {
+    lines.push(
+      `Top tool ${topTool.tool}: ${topTool.calls} calls · ${formatTokens(topTool.totalTokens)} out · ${(topTool.errorRate * 100).toFixed(0)}% errors`,
+    );
+  }
+  return lines;
 }
 
 function renderTable(headers: string[], rows: string[][]): string[] {
@@ -151,6 +178,7 @@ export function renderTerminal(model: ReportModel, opts: TerminalOptions = {}): 
   const lines = [
     ...header,
     ...(sidechainLine ? [sidechainLine] : []),
+    ...behaviorLines(model),
     "",
     c.bold("TOKEN BREAKDOWN"),
     c.dim("~ = estimated residual; share is of total reported tokens"),

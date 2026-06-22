@@ -2,6 +2,7 @@ import type { CostBreakdown } from "../attribution/cost.js";
 import type { Attribution, SectionKey } from "../attribution/tokenize.js";
 import type { Finding } from "../detectors/index.js";
 import type { AgentIdentity } from "../identify/index.js";
+import type { BehaviorInsights } from "../insights/index.js";
 import type { Session } from "../parsers/types.js";
 
 export interface ReportSession {
@@ -34,6 +35,7 @@ export interface ReportModel {
     warnings: string[];
   };
   findings: Finding[];
+  behavior?: BehaviorInsights;
 }
 
 function round(value: number): number {
@@ -81,6 +83,7 @@ export function buildReportModel(
     attribution: Attribution;
     cost: CostBreakdown;
     findings: Finding[];
+    insights?: BehaviorInsights;
   },
   opts: { includeContent?: boolean } = {},
 ): ReportModel {
@@ -137,5 +140,6 @@ export function buildReportModel(
       ...finding,
       evidence: finding.evidence.map((line) => redactEvidence(line, includeContent)),
     })),
+    behavior: input.insights,
   };
 }

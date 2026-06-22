@@ -8,8 +8,13 @@ import { d2CacheBreak } from "../../src/detectors/d2-cache-break.js";
 import { d3DupResults } from "../../src/detectors/d3-dup-results.js";
 import { d4Oversize } from "../../src/detectors/d4-oversize.js";
 import { d5Compactable } from "../../src/detectors/d5-compactable.js";
+import { d6ToolFailures } from "../../src/detectors/d6-tool-failures.js";
+import { d7ModelMismatch } from "../../src/detectors/d7-model-mismatch.js";
+import { d8ReadChurn } from "../../src/detectors/d8-read-churn.js";
+import { d9ContextGrowth } from "../../src/detectors/d9-context-growth.js";
 import { DETECTORS, type DetectorContext, runDetectors } from "../../src/detectors/index.js";
 import { identify } from "../../src/identify/index.js";
+import { buildBehaviorInsights } from "../../src/insights/index.js";
 import { parseClaudeSessionFile } from "../../src/parsers/claude-code.js";
 import type { Session, Turn } from "../../src/parsers/types.js";
 import { fixture } from "../helpers.js";
@@ -19,7 +24,8 @@ async function ctx(name: string): Promise<DetectorContext> {
   const agent = identify({ ...session, sourcePath: "/x/.claude/projects/p/s.jsonl" });
   const attribution = attributeSession(session, agent);
   const cost = computeCost(attribution, bundledPricingTable());
-  return { session, attribution, cost, agent };
+  const insights = buildBehaviorInsights({ session, attribution, agent });
+  return { session, attribution, cost, agent, insights };
 }
 
 describe("detectors", () => {
@@ -110,5 +116,92 @@ describe("detectors", () => {
     }));
     const session: Session = { ...oversized.session, turns };
     expect(d5Compactable({ ...oversized, session })[0]?.id).toBe("D5");
+  });
+
+  it("covers D6-D9 behavior detector positive paths", async () => {
+    const failure = await ctx("clean-session.jsonl");
+    failure.insights = {
+      ...failure.insights!,
+      toolBehavior: [
+        {
+          tool: "Bash",
+          calls: 3,
+          totalTokens: 900,
+          avgOutputTokens: 300,
+          costUsd: 0.01,
+          errorCount: 2,
+          errorRate: 0.67,
+          repeatRate: 0,
+          largestResultTokens: 400,
+          topTargets: [{ label: "bash:pnpm", calls: 3, tokenShare: 1 }],
+          confidence: 1,
+          estimated: true,
+        },
+      ],
+    };
+    expect(d6ToolFailures(failure)[0]?.id).toBe("D6");
+
+    const model = await ctx("clean-session.jsonl");
+    model.attribution.turns[0]!.model = "claude-opus-4-1";
+    model.insights = {
+      ...model.insights!,
+      turnEfficiency: [
+        {
+          turnIndex: 1,
+          turnId: model.attribution.turns[0]!.turnId,
+          inputTokens: 1500,
+          outputTokens: 50,
+          costUsd: 0.03,
+          inputOutputRatio: 30,
+          toolCallCount: 1,
+          contextTokens: 0,
+          cacheReadTokens: 0,
+          cacheWriteTokens: 0,
+          flags: ["simple"],
+        },
+      ],
+    };
+    expect(d7ModelMismatch(model)[0]?.id).toBe("D7");
+
+    const churn = await ctx("clean-session.jsonl");
+    churn.insights = {
+      ...churn.insights!,
+      toolBehavior: [
+        {
+          tool: "Read",
+          calls: 4,
+          totalTokens: 1200,
+          avgOutputTokens: 300,
+          costUsd: 0.01,
+          errorCount: 0,
+          errorRate: 0,
+          repeatRate: 0.75,
+          largestResultTokens: 300,
+          topTargets: [{ label: "index.ts#abcd", calls: 4, tokenShare: 1 }],
+          confidence: 1,
+          estimated: true,
+        },
+      ],
+    };
+    expect(d8ReadChurn(churn)[0]?.id).toBe("D8");
+
+    const growth = await ctx("clean-session.jsonl");
+    growth.insights = {
+      ...growth.insights!,
+      turnEfficiency: [100, 140, 210, 260].map((contextTokens, index) => ({
+        turnIndex: index + 1,
+        turnId: `g-${index}`,
+        inputTokens: 1000,
+        outputTokens: 80,
+        costUsd: 0,
+        inputOutputRatio: 12,
+        toolCallCount: 0,
+        contextTokens,
+        cacheReadTokens: 0,
+        cacheWriteTokens: 0,
+        flags: ["simple"],
+      })),
+    };
+    expect(d9ContextGrowth(growth)[0]?.id).toBe("D9");
   });
 });

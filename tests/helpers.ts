@@ -5,6 +5,7 @@ import { bundledPricingTable } from "../src/attribution/pricing.js";
 import { attributeSession } from "../src/attribution/tokenize.js";
 import { runDetectors } from "../src/detectors/index.js";
 import { identify } from "../src/identify/index.js";
+import { buildBehaviorInsights } from "../src/insights/index.js";
 import { parseClaudeSessionFile } from "../src/parsers/claude-code.js";
 import { buildReportModel } from "../src/render/model.js";
 
@@ -19,7 +20,15 @@ export async function sampleReport(name = "noisy-sidechain.jsonl") {
   });
   const attribution = attributeSession(session, identity);
   const cost = computeCost(attribution, bundledPricingTable());
-  const findings = runDetectors({ session, attribution, cost, agent: identity });
+  const baseInsights = buildBehaviorInsights({ session, attribution, agent: identity });
+  const findings = runDetectors({
+    session,
+    attribution,
+    cost,
+    agent: identity,
+    insights: baseInsights,
+  });
+  const insights = buildBehaviorInsights({ session, attribution, agent: identity, findings });
   const report = buildReportModel({
     version: "0.1.0",
     sessions: [session],
@@ -27,6 +36,7 @@ export async function sampleReport(name = "noisy-sidechain.jsonl") {
     attribution,
     cost,
     findings,
+    insights,
   });
-  return { session, identity, attribution, cost, findings, report };
+  return { session, identity, attribution, cost, findings, insights, report };
 }

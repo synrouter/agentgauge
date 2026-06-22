@@ -30,6 +30,62 @@ export const reportSchema = z.object({
     sections: z.array(z.unknown()),
     warnings: z.array(z.string()),
   }),
+  behavior: z
+    .object({
+      toolBehavior: z.array(
+        z.object({
+          tool: z.string(),
+          calls: z.number(),
+          totalTokens: z.number(),
+          avgOutputTokens: z.number(),
+          costUsd: z.number(),
+          errorCount: z.number(),
+          errorRate: z.number(),
+          repeatRate: z.number(),
+          largestResultTokens: z.number(),
+          topTargets: z.array(
+            z.object({ label: z.string(), calls: z.number(), tokenShare: z.number() }),
+          ),
+          confidence: z.number(),
+          estimated: z.boolean().optional(),
+        }),
+      ),
+      toolInventory: z
+        .object({
+          loaded: z.number(),
+          used: z.number(),
+          idle: z.number(),
+          estimated: z.boolean(),
+        })
+        .optional(),
+      turnEfficiency: z.array(
+        z.object({
+          turnIndex: z.number(),
+          turnId: z.string(),
+          inputTokens: z.number(),
+          outputTokens: z.number(),
+          costUsd: z.number(),
+          inputOutputRatio: z.number().nullable(),
+          toolCallCount: z.number(),
+          contextTokens: z.number(),
+          cacheReadTokens: z.number(),
+          cacheWriteTokens: z.number(),
+          flags: z.array(z.enum(["edit", "test", "error", "simple"])),
+        }),
+      ),
+      suggestions: z.array(
+        z.object({
+          id: z.string(),
+          severity: z.enum(["info", "low", "med", "high"]),
+          title: z.string(),
+          evidence: z.record(z.string(), z.unknown()),
+          action: z.string(),
+          confidence: z.number(),
+          relatedFindingIds: z.array(z.string()).optional(),
+        }),
+      ),
+    })
+    .optional(),
   findings: z.array(
     z.object({
       id: z.string(),

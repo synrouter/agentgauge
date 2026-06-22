@@ -1,7 +1,7 @@
 ---
 id: SPEC-AG-004
 title: "报告渲染：终端 / HTML / JSON"
-status: draft
+status: implemented
 created: 2026-06-11
 updated: 2026-06-11
 tags: [render, v0.1, P0]

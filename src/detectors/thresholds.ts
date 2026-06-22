@@ -12,4 +12,11 @@ export const THRESHOLDS = {
   oversizeTokens: 10_000,
   oversizeMedTokens: 20_000,
   compactableHistoryRatio: 0.3,
+  toolFailureMinErrors: 2,
+  toolFailureErrorRate: 0.3,
+  readChurnMinCalls: 3,
+  readChurnRepeatRate: 0.5,
+  contextGrowthMinTurns: 4,
+  contextGrowthRatio: 1.8,
+  modelMismatchMinTokens: 1_000,
 };

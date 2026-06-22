@@ -1,5 +1,5 @@
 ---
-updated: 2026-06-11
+updated: 2026-06-22
 ---
 
 # INDEX — agentgauge 文档索引与规范追溯
@@ -39,6 +39,7 @@ docs/
 | SPEC-AG-004 | 报告渲染：终端 / HTML / JSON | [prd](specs/SPEC-AG-004-report-rendering/prd.md) | [design](specs/SPEC-AG-004-report-rendering/design.md) | [tasks](specs/SPEC-AG-004-report-rendering/tasks.md) | implemented |
 | SPEC-AG-005 | CLI 接口（analyze / sessions / doctor / update-pricing） | [prd](specs/SPEC-AG-005-cli-interface/prd.md) | [design](specs/SPEC-AG-005-cli-interface/design.md) | [tasks](specs/SPEC-AG-005-cli-interface/tasks.md) | implemented |
 | SPEC-AG-006 | Agent 识别（三层指纹） | [prd](specs/SPEC-AG-006-agent-identify/prd.md) | [design](specs/SPEC-AG-006-agent-identify/design.md) | [tasks](specs/SPEC-AG-006-agent-identify/tasks.md) | implemented |
+| SPEC-AG-007 | Agent 行为洞察与可执行建议 | [prd](specs/SPEC-AG-007-behavior-insights/prd.md) | [design](specs/SPEC-AG-007-behavior-insights/design.md) | [tasks](specs/SPEC-AG-007-behavior-insights/tasks.md) | implemented |
 
 **实现依赖顺序**（不是严格串行，标注硬依赖）：
 
@@ -48,6 +49,12 @@ SPEC-AG-001 (parser)
   └─→ SPEC-AG-006 (identify)     ─→ SPEC-AG-003 的 D1            │
                                                                   ▼
                                                        SPEC-AG-005 (cli 编排，收口)
+
+SPEC-AG-007 (behavior insights)
+  ├─ consumes SPEC-AG-001 normalized turns / tool events
+  ├─ consumes SPEC-AG-002 attribution / per-tool tokens
+  ├─ extends SPEC-AG-003 with D6-D9
+  └─ extends SPEC-AG-004 render model without schema_version bump
 ```
 
 ### 何时立 SPEC？
@@ -80,6 +87,7 @@ SPEC-AG-001 (parser)
 | FR-AG-6 | 隐私保护（脱敏） | SPEC-AG-004（脱敏）+ SPEC-AG-005 | `src/render/model.ts`、`src/cli/commands/update-pricing.ts`、`assets/pricing.json` |
 | FR-AG-7 | 技术栈与分发 | —（已决，无需 SPEC） | `package.json`、`tsconfig.json`、`tsup.config.ts`、`vitest.config.ts`、`biome.json` |
 | FR-AG-12 | Agent 识别（三层指纹） | SPEC-AG-006 | `src/identify/profiles.ts`、`src/identify/index.ts` |
+| FR-AG-13 | Agent 行为洞察与可执行建议 | SPEC-AG-007 | `src/insights/tool-behavior.ts`、`src/insights/turn-efficiency.ts`、`src/detectors/d6-tool-failures.ts`、`src/detectors/d7-model-mismatch.ts`、`src/detectors/d8-read-churn.ts`、`src/detectors/d9-context-growth.ts`、`src/render/model.ts` |
 | PRD §5 | CLI 接口契约 | SPEC-AG-005 | `src/cli.ts`、`src/cli/args.ts`、`src/cli/commands/analyze.ts`、`src/cli/commands/sessions.ts`、`src/cli/commands/doctor.ts`、`src/cli/commands/update-pricing.ts` |
 
 ## 架构决策记录

@@ -6,6 +6,7 @@ import { loadPricingTable } from "../attribution/pricing.js";
 import { attributeSession, zeroAttribution } from "../attribution/tokenize.js";
 import { type DetectorOptions, runDetectors } from "../detectors/index.js";
 import { identify } from "../identify/index.js";
+import { buildBehaviorInsights } from "../insights/index.js";
 import { discoverClaudeSessionFiles } from "../lib/glob.js";
 import { parseDateBound, parseDuration } from "../lib/time.js";
 import { parseClaudeSessionFile } from "../parsers/claude-code.js";
@@ -95,8 +96,9 @@ export async function analyze(opts: AnalyzeOptions = {}): Promise<AnalysisOutput
       ? attributeSession(merged, identity)
       : zeroAttribution(merged.id, identity);
   const cost = computeCost(attribution, loadPricingTable());
+  const baseInsights = buildBehaviorInsights({ session: merged, attribution, agent: identity });
   const findings = runDetectors(
-    { session: merged, attribution, cost, agent: identity },
+    { session: merged, attribution, cost, agent: identity, insights: baseInsights },
     {
       detectors: opts.detectors,
       skipDetectors: opts.skipDetectors,
@@ -105,6 +107,12 @@ export async function analyze(opts: AnalyzeOptions = {}): Promise<AnalysisOutput
       warn: opts.warn,
     },
   );
+  const insights = buildBehaviorInsights({
+    session: merged,
+    attribution,
+    agent: identity,
+    findings,
+  });
   const report = buildReportModel(
     {
       version: packageVersion(),
@@ -113,6 +121,7 @@ export async function analyze(opts: AnalyzeOptions = {}): Promise<AnalysisOutput
       attribution,
       cost,
       findings,
+      insights,
     },
     { includeContent: opts.includeContent },
   );

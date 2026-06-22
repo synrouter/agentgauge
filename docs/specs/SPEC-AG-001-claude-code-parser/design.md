@@ -2,7 +2,7 @@
 id: DESIGN-AG-001
 spec: SPEC-AG-001
 title: "Claude Code Session 解析器设计"
-status: draft
+status: implemented
 created: 2026-06-11
 updated: 2026-06-11
 ---

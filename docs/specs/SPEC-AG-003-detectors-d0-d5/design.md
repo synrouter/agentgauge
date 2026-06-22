@@ -2,7 +2,7 @@
 id: DESIGN-AG-003
 spec: SPEC-AG-003
 title: "检测器框架与 D0–D5 设计"
-status: draft
+status: implemented
 created: 2026-06-11
 updated: 2026-06-11
 ---

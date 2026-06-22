@@ -1,6 +1,7 @@
 import type { CostBreakdown } from "../attribution/cost.js";
 import type { Attribution } from "../attribution/tokenize.js";
 import type { AgentIdentity } from "../identify/index.js";
+import type { BehaviorInsights } from "../insights/index.js";
 import type { Session } from "../parsers/types.js";
 import { d0Noise } from "./d0-noise.js";
 import { d1ToolBloat } from "./d1-tool-bloat.js";
@@ -8,6 +9,10 @@ import { d2CacheBreak } from "./d2-cache-break.js";
 import { d3DupResults } from "./d3-dup-results.js";
 import { d4Oversize } from "./d4-oversize.js";
 import { d5Compactable } from "./d5-compactable.js";
+import { d6ToolFailures } from "./d6-tool-failures.js";
+import { d7ModelMismatch } from "./d7-model-mismatch.js";
+import { d8ReadChurn } from "./d8-read-churn.js";
+import { d9ContextGrowth } from "./d9-context-growth.js";
 
 export type Severity = "low" | "med" | "high";
 
@@ -30,6 +35,7 @@ export interface DetectorContext {
   attribution: Attribution;
   cost: CostBreakdown;
   agent: AgentIdentity;
+  insights?: BehaviorInsights;
 }
 
 export interface DetectorOptions {
@@ -49,6 +55,10 @@ export const DETECTORS: Record<string, Detector> = {
   D3: d3DupResults,
   D4: d4Oversize,
   D5: d5Compactable,
+  D6: d6ToolFailures,
+  D7: d7ModelMismatch,
+  D8: d8ReadChurn,
+  D9: d9ContextGrowth,
 };
 
 const severityRank: Record<Severity, number> = { low: 1, med: 2, high: 3 };

@@ -1,7 +1,7 @@
 ---
 id: SPEC-AG-005
 title: "CLI 接口：analyze / sessions / doctor / update-pricing"
-status: draft
+status: implemented
 created: 2026-06-11
 updated: 2026-06-11
 tags: [cli, v0.1, P0]

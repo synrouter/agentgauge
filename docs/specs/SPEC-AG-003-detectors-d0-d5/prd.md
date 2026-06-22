@@ -1,7 +1,7 @@
 ---
 id: SPEC-AG-003
 title: "检测器 D0–D5 与 Finding 框架"
-status: draft
+status: implemented
 created: 2026-06-11
 updated: 2026-06-11
 tags: [detectors, noise, v0.1, P0]

@@ -2,7 +2,7 @@
 id: DESIGN-AG-005
 spec: SPEC-AG-005
 title: "CLI 接口实现设计"
-status: draft
+status: implemented
 created: 2026-06-11
 updated: 2026-06-11
 ---

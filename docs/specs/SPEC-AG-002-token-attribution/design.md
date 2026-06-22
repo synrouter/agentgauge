@@ -2,7 +2,7 @@
 id: DESIGN-AG-002
 spec: SPEC-AG-002
 title: "Token 归因与成本计算设计"
-status: draft
+status: implemented
 created: 2026-06-11
 updated: 2026-06-11
 ---

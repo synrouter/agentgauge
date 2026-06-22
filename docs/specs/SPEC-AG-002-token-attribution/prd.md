@@ -1,7 +1,7 @@
 ---
 id: SPEC-AG-002
 title: "语义角色 Token 归因与成本计算"
-status: draft
+status: implemented
 created: 2026-06-11
 updated: 2026-06-11
 tags: [attribution, pricing, v0.1, P0]
