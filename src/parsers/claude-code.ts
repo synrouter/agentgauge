@@ -106,6 +106,7 @@ function resultsFromContent(content: unknown): ToolResult[] {
       {
         toolUseId: String((block as any).tool_use_id ?? ""),
         content: typeof value === "string" ? value : JSON.stringify(value ?? ""),
+        isError: Boolean((block as any).is_error) || undefined,
       },
     ];
   });

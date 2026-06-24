@@ -30,7 +30,9 @@ function hasTestCommand(turn: Turn): boolean {
 
 function hasError(turn: Turn): boolean {
   return turn.messages.some((message) =>
-    message.toolResults.some((result) => toolResultLooksLikeError(result.content)),
+    message.toolResults.some(
+      (result) => result.isError || toolResultLooksLikeError(result.content),
+    ),
   );
 }
 

@@ -74,7 +74,9 @@ export function targetSignature(call: ToolCall): { label: string; parsed: boolea
     : { label: "unknown", parsed: false };
 }
 
-function hasError(content: string): boolean {
+function hasError(content: string, isError?: boolean): boolean {
+  // Structured is_error flag wins; regex is a fallback for logs that lack it.
+  if (isError) return true;
   return ERROR_RE.test(content);
 }
 
@@ -139,7 +141,7 @@ export function buildToolBehavior(session: Session, attribution: Attribution): T
         prev.totalTokens += tokens;
         prev.costUsd += toolResultCost(tokens, attribution);
         prev.largestResultTokens = Math.max(prev.largestResultTokens, tokens);
-        if (hasError(result.content)) prev.errorCount += 1;
+        if (hasError(result.content, result.isError)) prev.errorCount += 1;
         const target = call ? targetSignature(call) : { label: "unknown", parsed: false };
         const targetPrev = prev.targets.get(target.label) ?? { calls: 0, tokens: 0 };
         targetPrev.tokens += tokens;

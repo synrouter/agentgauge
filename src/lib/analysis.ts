@@ -6,7 +6,8 @@ import { loadPricingTable } from "../attribution/pricing.js";
 import { attributeSession, zeroAttribution } from "../attribution/tokenize.js";
 import { type DetectorOptions, runDetectors } from "../detectors/index.js";
 import { identify } from "../identify/index.js";
-import { buildBehaviorInsights } from "../insights/index.js";
+import { buildBehaviorInsights, buildBehaviorSuggestions } from "../insights/index.js";
+import type { BehaviorInsights } from "../insights/index.js";
 import { discoverClaudeSessionFiles } from "../lib/glob.js";
 import { parseDateBound, parseDuration } from "../lib/time.js";
 import { parseClaudeSessionFile } from "../parsers/claude-code.js";
@@ -107,12 +108,18 @@ export async function analyze(opts: AnalyzeOptions = {}): Promise<AnalysisOutput
       warn: opts.warn,
     },
   );
-  const insights = buildBehaviorInsights({
-    session: merged,
-    attribution,
-    agent: identity,
-    findings,
-  });
+  // Rebuild only suggestions (cheap) against detector findings; reuse the
+  // expensive toolBehavior / turnEfficiency / toolInventory from baseInsights
+  // instead of recomputing the full traversal a second time.
+  const insights: BehaviorInsights = {
+    ...baseInsights,
+    suggestions: buildBehaviorSuggestions({
+      tools: baseInsights.toolBehavior,
+      turns: baseInsights.turnEfficiency,
+      toolInventory: baseInsights.toolInventory,
+      findingIds: findings.map((finding) => finding.id),
+    }),
+  };
   const report = buildReportModel(
     {
       version: packageVersion(),

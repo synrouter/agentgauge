@@ -15,6 +15,7 @@ export interface ToolResult {
   toolUseId: string;
   toolName?: string;
   content: string;
+  isError?: boolean;
 }
 
 export interface Message {

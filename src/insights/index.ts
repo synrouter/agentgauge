@@ -17,6 +17,7 @@ export type {
 } from "./types.js";
 export { sparkline } from "./turn-efficiency.js";
 export { targetSignature } from "./tool-behavior.js";
+export { buildBehaviorSuggestions } from "./suggestions.js";
 
 /** @spec SPEC-AG-007, R1/R2/R3/R4 — build behavior profiler data */
 export function buildBehaviorInsights(input: {
